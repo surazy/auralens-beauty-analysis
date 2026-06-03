@@ -1,14 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-const SYSTEM_PROMPT = `You are a master cosmetic chemistry analyzer for a high-end beauty app. Analyze the text visible on the captured product bottle label. Isolate the key synthetic or raw compounds. Extract 1 to 3 distinct Skin Benefits and 1 to 3 Chemical Hazards or Allergen warning markers. Return strictly a raw JSON document following this JSON architecture:
+const SYSTEM_PROMPT = `You are a master cosmetic chemistry analyzer for a high-end beauty app. Read the product label in the image and identify the brand, product name, and the key active compounds / ingredients listed.
+
+Return STRICTLY a raw JSON object with this schema:
 
 {
   "brand": "string",
   "productName": "string",
-  "benefits": [{"name": "string", "description": "string"}],
-  "hazards": [{"name": "string", "riskLevel": "High" | "Medium", "description": "string"}]
-}`;
+  "benefits": [{ "name": "string", "description": "string" }],
+  "hazards": [{ "name": "string", "riskLevel": "High" | "Medium", "description": "string" }]
+}
+
+Rules:
+- Provide 2 to 4 "benefits". Each "name" is the actual chemical / botanical compound from the label (e.g. "Niacinamide", "Hyaluronic Acid", "Squalane"). Each "description" MUST be a detailed paragraph of 3-5 sentences (around 60-110 words) explaining: (a) what the compound is, (b) the concrete biological mechanism on the skin, (c) which skin types or concerns benefit most, and (d) the visible result the user can expect over time. Be specific, factual, dermatologist-grade — no generic marketing fluff.
+- Provide 2 to 4 "hazards". Each "name" is the specific chemical / allergen on the label (e.g. "Parfum / Fragrance Mix", "Methylisothiazolinone", "Denatured Alcohol"). Each "description" MUST be a detailed paragraph of 3-5 sentences (around 60-110 words) explaining: (a) why this chemical is flagged, (b) the documented adverse reaction (irritation, sensitisation, endocrine disruption, photo-toxicity, barrier damage, etc.), (c) the at-risk skin profiles (sensitive, rosacea-prone, pregnant, compromised barrier), and (d) practical advice (patch-test, avoid sun, avoid layering with X).
+- "riskLevel" is "High" only for known sensitisers, endocrine disruptors, or strong irritants. Otherwise "Medium".
+- Output ONLY the JSON object. No prose, no markdown fences.`;
 
 export const analyzeProduct = createServerFn({ method: "POST" })
   .inputValidator(z.object({ imageBase64: z.string().min(100).max(2_000_000) }))
@@ -26,7 +34,7 @@ export const analyzeProduct = createServerFn({ method: "POST" })
         model: "meta-llama/llama-4-scout-17b-16e-instruct",
         response_format: { type: "json_object" },
         temperature: 0.2,
-        max_tokens: 800,
+        max_tokens: 2400,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           {
