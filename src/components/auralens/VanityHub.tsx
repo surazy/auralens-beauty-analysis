@@ -1,5 +1,7 @@
+"use client";
+
 import { motion } from "framer-motion";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { Camera, Sparkles, Clock, Droplet, History } from "lucide-react";
 
 interface Props {
@@ -16,11 +18,13 @@ export function VanityHub({ onLaunchCamera }: Props) {
       {/* header */}
       <header className="relative z-10 flex items-center justify-between px-6 pt-12">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">Maison</p>
+          <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
+            Maison
+          </p>
           <h1 className="font-display text-3xl gold-text-gradient">AuraLens</h1>
         </div>
         <Link
-          to="/history"
+          href="/history"
           className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
           aria-label="Open archive"
         >
@@ -37,18 +41,28 @@ export function VanityHub({ onLaunchCamera }: Props) {
       >
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Active State</p>
-            <p className="mt-2 font-display text-xl text-foreground">Sensitive & Dry</p>
-            <p className="text-xs text-muted-foreground">Skin Profile · pH 5.4</p>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+              Active State
+            </p>
+            <p className="mt-2 font-display text-xl text-foreground">
+              Sensitive &amp; Dry
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Skin Profile · pH 5.4
+            </p>
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-1.5 rounded-full border border-gold/30 px-3 py-1">
               <Droplet className="h-3 w-3 text-gold" />
-              <span className="text-[10px] tracking-widest text-gold">HYDRA 62%</span>
+              <span className="text-[10px] tracking-widest text-gold">
+                HYDRA 62%
+              </span>
             </div>
             <div className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1">
               <Sparkles className="h-3 w-3 text-muted-foreground" />
-              <span className="text-[10px] tracking-widest text-muted-foreground">GLOW 71</span>
+              <span className="text-[10px] tracking-widest text-muted-foreground">
+                GLOW 71
+              </span>
             </div>
           </div>
         </div>
@@ -67,7 +81,9 @@ export function VanityHub({ onLaunchCamera }: Props) {
           <div className="absolute inset-2 rounded-full border border-[oklch(0.1_0_0_/_15%)]" />
           <Camera className="h-12 w-12" strokeWidth={1.5} />
         </motion.button>
-        <p className="mt-6 font-display text-lg text-foreground">Begin the Ritual</p>
+        <p className="mt-6 font-display text-lg text-foreground">
+          Begin the Ritual
+        </p>
       </div>
 
       {/* ritual timeline */}
@@ -75,7 +91,9 @@ export function VanityHub({ onLaunchCamera }: Props) {
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="h-3.5 w-3.5 text-gold" />
-            <p className="text-[11px] uppercase tracking-[0.3em] text-foreground">Ritual Timeline</p>
+            <p className="text-[11px] uppercase tracking-[0.3em] text-foreground">
+              Ritual Timeline
+            </p>
           </div>
           <span className="text-[10px] text-muted-foreground">7d</span>
         </div>

@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import { motion, AnimatePresence } from "framer-motion";
@@ -100,7 +102,9 @@ export function CameraMatrix({ onClose, onCapture }: Props) {
             >
               <div className="flex items-center gap-2">
                 <Scan className="h-4 w-4 text-gold animate-pulse" />
-                <p className="font-display text-lg shimmer-text">Decoding botanical matrix…</p>
+                <p className="font-display text-lg shimmer-text">
+                  Decoding botanical matrix…
+                </p>
               </div>
               <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
                 Llama 4 Scout · Vision

@@ -1,3 +1,5 @@
+"use client";
+
 import { motion } from "framer-motion";
 import { X, Sparkles, AlertTriangle, Leaf } from "lucide-react";
 
@@ -5,7 +7,11 @@ export interface AnalysisResult {
   brand?: string;
   productName?: string;
   benefits?: { name: string; description: string }[];
-  hazards?: { name: string; riskLevel: "High" | "Medium"; description: string }[];
+  hazards?: {
+    name: string;
+    riskLevel: "High" | "Medium";
+    description: string;
+  }[];
 }
 
 interface Props {
