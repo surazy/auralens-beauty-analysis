@@ -7,6 +7,7 @@ import { VanityHub } from "@/components/auralens/VanityHub";
 import { CameraMatrix } from "@/components/auralens/CameraMatrix";
 import { SynergySheet, type AnalysisResult } from "@/components/auralens/SynergySheet";
 import { analyzeProduct } from "@/lib/analyze.functions";
+import { db } from "@/lib/db";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -41,8 +42,19 @@ function AuraLens() {
     try {
       const res = await analyze({ data: { imageBase64: base64 } });
       if (res.ok) {
-        setResult(res.result as AnalysisResult);
+        const r = res.result as AnalysisResult;
+        setResult(r);
         setError(null);
+        try {
+          await db.saveScan({
+            brand: r.brand ?? "",
+            productName: r.productName ?? "",
+            benefits: r.benefits ?? [],
+            hazards: r.hazards ?? [],
+          });
+        } catch (err) {
+          console.warn("[db] failed to persist scan", err);
+        }
       } else {
         setResult(null);
         setError(res.error);

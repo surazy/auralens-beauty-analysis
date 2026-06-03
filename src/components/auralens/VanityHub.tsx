@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Camera, Sparkles, Clock, Droplet, Flower2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Camera, Sparkles, Clock, Droplet, History } from "lucide-react";
 
 interface Props {
   onLaunchCamera: () => void;
@@ -18,9 +19,13 @@ export function VanityHub({ onLaunchCamera }: Props) {
           <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">Maison</p>
           <h1 className="font-display text-3xl gold-text-gradient">AuraLens</h1>
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-full glass">
-          <Flower2 className="h-4 w-4 text-gold" />
-        </div>
+        <Link
+          to="/history"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
+          aria-label="Open archive"
+        >
+          <History className="h-4 w-4 text-gold" />
+        </Link>
       </header>
 
       {/* profile card */}
