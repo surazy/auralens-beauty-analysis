@@ -10,6 +10,11 @@ import {
   AlertTriangle,
   Sparkles,
   X,
+  Send,
+  Bot,
+  HeartHandshake,
+  ExternalLink,
+  Clock,
 } from "lucide-react";
 import { db, type ScanRecord } from "@/lib/db";
 
@@ -148,7 +153,10 @@ export default function HistoryPage() {
         {selected && (
           <DetailSheet
             record={selected}
-            onClose={() => setSelected(null)}
+            onClose={() => {
+              setSelected(null);
+              refresh();
+            }}
           />
         )}
       </AnimatePresence>
@@ -163,6 +171,85 @@ function DetailSheet({
   record: ScanRecord;
   onClose: () => void;
 }) {
+  const [chatLog, setChatLog] = useState<Array<{ sender: "user" | "ai"; text: string; date: string }>>(
+    record.progressChatLog || []
+  );
+  const [inputText, setInputText] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [expandedBenefitIdx, setExpandedBenefitIdx] = useState<number | null>(null);
+  const [expandedHazardIdx, setExpandedHazardIdx] = useState<number | null>(null);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputText.trim()) return;
+
+    const userText = inputText;
+    setInputText("");
+
+    const newUserMessage = { sender: "user" as const, text: userText, date: "Today" };
+    const updatedLog = [...chatLog, newUserMessage];
+    setChatLog(updatedLog);
+    setIsSending(true);
+
+    // Save user message to DB
+    const intermediateRecord: ScanRecord = {
+      ...record,
+      progressChatLog: updatedLog,
+    };
+    await db.updateScan(intermediateRecord);
+
+    let profile = { skinType: "Sensitive", age: "30-39" };
+    try {
+      const saved = localStorage.getItem("auralens:profile");
+      if (saved) profile = JSON.parse(saved);
+    } catch (err) {
+      console.error("[chat] failed to read profile from storage", err);
+    }
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: updatedLog,
+          profile,
+          product: record,
+        }),
+      });
+
+      const res = await response.json();
+
+      if (res.ok && res.reply) {
+        const updatedLogWithAi = [
+          ...updatedLog,
+          { sender: "ai" as const, text: res.reply, date: "Just now" },
+        ];
+        setChatLog(updatedLogWithAi);
+
+        // Save complete log with AI response to DB
+        const updatedRecord: ScanRecord = {
+          ...record,
+          progressChatLog: updatedLogWithAi,
+        };
+        await db.updateScan(updatedRecord);
+      } else {
+        throw new Error(res.error || "Failed to generate reply");
+      }
+    } catch (err: any) {
+      console.error("[chat] AI reply failed, using offline fallback", err);
+      const fallbackText = "I am experiencing temporary connection issues, but please monitor any dryness or irritation closely and pause usage if symptoms persist.";
+      const updatedLogWithAi = [
+        ...updatedLog,
+        { sender: "ai" as const, text: fallbackText, date: "Just now" },
+      ];
+      setChatLog(updatedLogWithAi);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
     <>
       <motion.div
@@ -200,6 +287,22 @@ function DetailSheet({
           </button>
         </div>
 
+        {/* Safety Status Banner */}
+        {record.isProductSafe !== undefined && (
+          <div
+            className={`mb-5 rounded-xl border p-3 flex items-center justify-between text-xs ${
+              record.isProductSafe
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700"
+                : "bg-amber-500/10 border-amber-500/30 text-amber-700"
+            }`}
+          >
+            <span>Formula Assessment:</span>
+            <span className="font-medium uppercase tracking-wider">
+              {record.isProductSafe ? "Safe & Clean" : "Harmful Ingredients Flagged"}
+            </span>
+          </div>
+        )}
+
         <section className="mb-6">
           <div className="mb-3 flex items-center gap-2">
             <Leaf className="h-3.5 w-3.5 text-gold" />
@@ -208,21 +311,42 @@ function DetailSheet({
             </h3>
           </div>
           <div className="space-y-2">
-            {record.benefits.map((b, i) => (
-              <div
-                key={i}
-                className="rounded-2xl border border-gold/30 bg-secondary p-4"
-              >
-                <p className="text-sm font-medium text-gold">{b.name}</p>
-                <p className="mt-1 text-xs leading-relaxed text-foreground/80">
-                  {b.description}
-                </p>
-              </div>
-            ))}
+            {record.benefits.map((b, i) => {
+              const isExpanded = expandedBenefitIdx === i;
+              return (
+                <div
+                  key={i}
+                  onClick={() => setExpandedBenefitIdx(isExpanded ? null : i)}
+                  className="rounded-2xl border border-gold/30 bg-secondary p-4 cursor-pointer hover:bg-secondary/45 transition-colors select-none"
+                >
+                  <div className="mb-1 flex items-center justify-between">
+                    <p className="text-sm font-medium text-gold">{b.name}</p>
+                    <span className="text-[9px] text-gold/60 uppercase tracking-widest font-medium">
+                      {isExpanded ? "Hide" : "Detail"}
+                    </span>
+                  </div>
+                  <p className="text-xs leading-relaxed text-foreground/80">
+                    {b.description}
+                  </p>
+                  <AnimatePresence initial={false}>
+                    {isExpanded && b.details && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden mt-2 pt-2 border-t border-gold/15 text-[11px] text-foreground/75 leading-relaxed"
+                      >
+                        {b.details}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
           </div>
         </section>
 
-        <section>
+        <section className="mb-6">
           <div className="mb-3 flex items-center gap-2">
             <AlertTriangle className="h-3.5 w-3.5 text-[oklch(0.62_0.22_27)]" />
             <h3 className="text-[11px] uppercase tracking-[0.35em]">
@@ -232,13 +356,15 @@ function DetailSheet({
           <div className="space-y-2">
             {record.hazards.map((h, i) => {
               const high = h.riskLevel === "High";
+              const isExpanded = expandedHazardIdx === i;
               return (
                 <div
                   key={i}
-                  className={`rounded-2xl border p-4 ${
+                  onClick={() => setExpandedHazardIdx(isExpanded ? null : i)}
+                  className={`rounded-2xl border p-4 cursor-pointer transition-colors select-none ${
                     high
-                      ? "border-[oklch(0.62_0.22_27_/_50%)] bg-[oklch(0.95_0.05_30)]"
-                      : "border-[oklch(0.72_0.17_60_/_50%)] bg-[oklch(0.97_0.04_70)]"
+                      ? "border-[oklch(0.62_0.22_27_/_50%)] bg-[oklch(0.95_0.05_30)] hover:bg-[oklch(0.95_0.05_30)/85]"
+                      : "border-[oklch(0.72_0.17_60_/_50%)] bg-[oklch(0.97_0.04_70)] hover:bg-[oklch(0.97_0.04_70)/85]"
                   }`}
                 >
                   <div className="mb-1 flex items-center justify-between">
@@ -251,22 +377,186 @@ function DetailSheet({
                     >
                       {h.name}
                     </p>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[9px] uppercase tracking-widest text-white ${
-                        high
-                          ? "bg-[oklch(0.62_0.22_27)]"
-                          : "bg-[oklch(0.72_0.17_60)]"
-                      }`}
-                    >
-                      {h.riskLevel}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[9px] uppercase tracking-widest text-white ${
+                          high
+                            ? "bg-[oklch(0.62_0.22_27)]"
+                            : "bg-[oklch(0.72_0.17_60)]"
+                        }`}
+                      >
+                        {h.riskLevel}
+                      </span>
+                      <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-medium">
+                        {isExpanded ? "Hide" : "Detail"}
+                      </span>
+                    </div>
                   </div>
                   <p className="text-xs leading-relaxed text-foreground/80">
                     {h.description}
                   </p>
+                  <AnimatePresence initial={false}>
+                    {isExpanded && h.details && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className={`overflow-hidden mt-2 pt-2 border-t text-[11px] leading-relaxed ${
+                          high
+                            ? "border-[oklch(0.62_0.22_27_/_20%)] text-[oklch(0.45_0.2_27)]/90"
+                            : "border-[oklch(0.72_0.17_60_/_20%)] text-[oklch(0.5_0.15_60)]/90"
+                        }`}
+                      >
+                        {h.details}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             })}
+          </div>
+        </section>
+
+        {/* Botanical recommendation swap */}
+        {record.alternativeProduct && !record.isProductSafe && (
+          <section className="mb-6">
+            <div className="mb-3 flex items-center gap-2">
+              <HeartHandshake className="h-3.5 w-3.5 text-gold" />
+              <h3 className="text-[11px] uppercase tracking-[0.35em] text-foreground">
+                Botanical Recommendation
+              </h3>
+            </div>
+            <div className="rounded-2xl border border-gold bg-secondary/30 p-4">
+              <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+                {record.alternativeProduct.brand}
+              </p>
+              <h4 className="font-display text-lg text-gold mt-0.5">
+                {record.alternativeProduct.name}
+              </h4>
+              <p className="mt-2 text-xs leading-relaxed text-foreground/80">
+                {record.alternativeProduct.reason}
+              </p>
+              <a
+                href="https://abi-cosmetics.com/shop-2/"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-gold font-medium hover:underline"
+              >
+                Explore Marketplace <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          </section>
+        )}
+
+        {/* Skincare Routine Timeline */}
+        {record.usageDetails && record.hasPurchased && (
+          <section className="mb-6">
+            <div className="mb-3 flex items-center gap-2">
+              <Clock className="h-3.5 w-3.5 text-gold" />
+              <h3 className="text-[11px] uppercase tracking-[0.35em] text-foreground">
+                Skincare Routine Guide
+              </h3>
+            </div>
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-border bg-card p-4 text-xs">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">When to Use</p>
+                <p className="font-medium text-foreground">{record.usageDetails.whenToUse}</p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-3 mb-1">How to Apply</p>
+                <p className="text-foreground/80 leading-relaxed">{record.usageDetails.howToUse}</p>
+              </div>
+
+              {/* Timeline */}
+              <div className="relative pl-5 space-y-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-[1px] before:bg-border">
+                <div className="relative">
+                  <div className="absolute -left-5 top-1 h-3.5 w-3.5 rounded-full border border-gold bg-background flex items-center justify-center text-[7px] text-gold font-bold">3</div>
+                  <h5 className="text-xs font-semibold text-gold pl-1">Day 3 Expectation</h5>
+                  <p className="text-xs text-muted-foreground pl-1 mt-0.5">{record.usageDetails.timeline.day3}</p>
+                </div>
+                <div className="relative">
+                  <div className="absolute -left-5 top-1 h-3.5 w-3.5 rounded-full border border-gold bg-background flex items-center justify-center text-[7px] text-gold font-bold">14</div>
+                  <h5 className="text-xs font-semibold text-gold pl-1">Day 14 Expectation</h5>
+                  <p className="text-xs text-muted-foreground pl-1 mt-0.5">{record.usageDetails.timeline.day14}</p>
+                </div>
+                <div className="relative">
+                  <div className="absolute -left-5 top-1 h-3.5 w-3.5 rounded-full border border-gold bg-gold flex items-center justify-center text-[7px] text-primary-foreground font-bold">30</div>
+                  <h5 className="text-xs font-semibold text-gold pl-1">Day 30 Results</h5>
+                  <p className="text-xs text-muted-foreground pl-1 mt-0.5">{record.usageDetails.timeline.day30}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Aura Coach Progress Log */}
+        <section className="mt-8 border-t border-border pt-6">
+          <div className="rounded-3xl bg-neutral-950 text-neutral-100 p-4 border border-gold/30 shadow-lg flex flex-col gap-3">
+            {/* Coach Header */}
+            <div className="flex items-center gap-2 pb-2 border-b border-neutral-900">
+              <div className="h-6 w-6 rounded-full bg-gold/20 flex items-center justify-center text-gold border border-gold/40">
+                <Bot className="h-3.5 w-3.5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-display font-medium text-gold">Aura Coach Consultation</h4>
+                <p className="text-[9px] text-muted-foreground">Routine Consistency Log</p>
+              </div>
+            </div>
+
+            {/* Chat Messages */}
+            <div className="space-y-3 max-h-48 overflow-y-auto p-1 scrollbar-thin">
+              {chatLog.length === 0 && (
+                <p className="text-[10px] text-neutral-500 text-center py-4 italic">
+                  Ask the Aura Coach about dryness, stinging, routine adjust periods, or general product feedback.
+                </p>
+              )}
+              {chatLog.map((msg, i) => {
+                const isUser = msg.sender === "user";
+                return (
+                  <div
+                    key={i}
+                    className={`flex flex-col max-w-[85%] ${
+                      isUser ? "ml-auto items-end" : "mr-auto items-start"
+                    }`}
+                  >
+                    <div
+                      className={`rounded-2xl px-3 py-2 text-xs leading-relaxed ${
+                        isUser
+                          ? "bg-gold/15 text-gold border border-gold/25"
+                          : "bg-neutral-900 text-neutral-200 border border-neutral-800"
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
+                    <span className="text-[8px] text-neutral-500 mt-1 px-1">
+                      {msg.date}
+                    </span>
+                  </div>
+                );
+              })}
+
+              {isSending && (
+                <div className="flex items-center gap-1.5 text-[10px] text-gold/70 italic px-1 animate-pulse">
+                  <span>Aura Coach is writing...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Send Input Form */}
+            <form onSubmit={handleSendMessage} className="flex gap-2 mt-2">
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Log progress or flag dryness/stinging..."
+                className="flex-1 bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-gold/50"
+              />
+              <button
+                type="submit"
+                disabled={!inputText.trim()}
+                className="gold-gradient text-neutral-950 font-medium px-3 rounded-xl hover:opacity-95 transition-opacity disabled:opacity-40"
+              >
+                <Send className="h-3.5 w-3.5 text-neutral-950" />
+              </button>
+            </form>
           </div>
         </section>
       </motion.div>

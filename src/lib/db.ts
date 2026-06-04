@@ -10,8 +10,25 @@ export interface ScanRecord {
   createdAt: number; // unix ms
   brand: string;
   productName: string;
-  benefits: { name: string; description: string }[];
-  hazards: { name: string; riskLevel: "High" | "Medium"; description: string }[];
+  isProductSafe?: boolean;
+  benefits: { name: string; description: string; details?: string }[];
+  hazards: { name: string; riskLevel: "High" | "Medium"; description: string; details?: string }[];
+  alternativeProduct?: {
+    name: string;
+    brand: string;
+    reason: string;
+  };
+  usageDetails?: {
+    howToUse: string;
+    whenToUse: string;
+    timeline: {
+      day3: string;
+      day14: string;
+      day30: string;
+    };
+  };
+  hasPurchased?: boolean;
+  progressChatLog?: Array<{ sender: "user" | "ai"; text: string; date: string }>;
 }
 
 const LS_KEY = "auralens:scans";
@@ -32,6 +49,15 @@ export const db = {
     all.unshift(rec);
     localStorage.setItem(LS_KEY, JSON.stringify(all.slice(0, 200)));
     return rec;
+  },
+
+  async updateScan(record: ScanRecord): Promise<void> {
+    const all = await this.listScans();
+    const idx = all.findIndex((s) => s.id === record.id);
+    if (idx !== -1) {
+      all[idx] = record;
+      localStorage.setItem(LS_KEY, JSON.stringify(all));
+    }
   },
 
   async listScans(): Promise<ScanRecord[]> {
