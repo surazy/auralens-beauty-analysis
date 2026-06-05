@@ -31,6 +31,7 @@ export const translations = {
     decodingMatrix: "Decoding botanical matrix…",
     llamaScout: "Llama 4 Scout · Vision",
     analyzeFormula: "Analyze Formula",
+    uploadImage: "Upload Image",
     // SynergySheet
     synergyReveal: "Synergy Reveal",
     routineAssessment: "Routine Assessment",
@@ -138,6 +139,7 @@ export const translations = {
     decodingMatrix: "የዕፅዋት ማትሪክስ እየተፈታ ነው…",
     llamaScout: "ላማ 4 ስካውት · ቪዥን",
     analyzeFormula: "ፎርሙላውን መርምር",
+    uploadImage: "ምስል ጫን",
     // SynergySheet
     synergyReveal: "የውህደት መገለጫ",
     routineAssessment: "የልምምድ ግምገማ",
