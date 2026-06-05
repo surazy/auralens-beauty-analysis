@@ -16,6 +16,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { db } from "@/lib/db";
+import { translations, type Locale } from "@/lib/translations";
 
 export interface AnalysisResult {
   brand?: string;
@@ -48,11 +49,12 @@ interface Props {
   data: AnalysisResult | null;
   error?: string | null;
   onClose: () => void;
+  locale: Locale;
 }
 
 type ViewState = "results" | "purchase_check" | "usage" | "recommendation";
 
-export function SynergySheet({ data, error, onClose }: Props) {
+export function SynergySheet({ data, error, onClose, locale }: Props) {
   const [viewState, setViewState] = useState<ViewState>("results");
   const [expandedBenefitIdx, setExpandedBenefitIdx] = useState<number | null>(null);
   const [expandedHazardIdx, setExpandedHazardIdx] = useState<number | null>(null);
@@ -83,6 +85,8 @@ export function SynergySheet({ data, error, onClose }: Props) {
     }
   };
 
+  const t = translations[locale];
+
   return (
     <>
       <motion.div
@@ -104,18 +108,18 @@ export function SynergySheet({ data, error, onClose }: Props) {
           <div>
             <p className="text-[10px] uppercase tracking-[0.4em] text-gold">
               {viewState === "results"
-                ? "Synergy Reveal"
+                ? t.synergyReveal
                 : viewState === "purchase_check"
-                ? "Routine Assessment"
-                : viewState === "usage"
-                ? "Routine Coaching"
-                : "Ritual Swap"}
+                  ? t.routineAssessment
+                  : viewState === "usage"
+                    ? t.routineCoaching
+                    : t.scanSwap}
             </p>
             <h2 className="mt-1 font-display text-2xl gold-text-gradient">
-              {data?.brand || "Unknown House"}
+              {data?.brand || t.unknownHouse}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {data?.productName || "Untitled Formula"}
+              {data?.productName || t.untitledFormula}
             </p>
           </div>
           <button
@@ -146,7 +150,7 @@ export function SynergySheet({ data, error, onClose }: Props) {
                   <div className="mb-3 flex items-center gap-2">
                     <Leaf className="h-3.5 w-3.5 text-gold" />
                     <h3 className="text-[11px] uppercase tracking-[0.35em] text-foreground">
-                      Skin Benefits
+                      {t.skinBenefits}
                     </h3>
                   </div>
                   <div className="space-y-2">
@@ -166,7 +170,7 @@ export function SynergySheet({ data, error, onClose }: Props) {
                               </p>
                             </div>
                             <span className="text-[9px] text-gold/60 uppercase tracking-widest font-medium">
-                              {isExpanded ? "Hide" : "Detail"}
+                              {isExpanded ? t.hide : t.detail}
                             </span>
                           </div>
                           <p className="text-xs leading-relaxed text-foreground/80">
@@ -189,7 +193,7 @@ export function SynergySheet({ data, error, onClose }: Props) {
                     })}
                     {(data.benefits ?? []).length === 0 && (
                       <p className="text-xs text-muted-foreground">
-                        No benefits detected.
+                        {t.noBenefits}
                       </p>
                     )}
                   </div>
@@ -199,7 +203,7 @@ export function SynergySheet({ data, error, onClose }: Props) {
                   <div className="mb-3 flex items-center gap-2">
                     <AlertTriangle className="h-3.5 w-3.5 text-[oklch(0.62_0.22_27)]" />
                     <h3 className="text-[11px] uppercase tracking-[0.35em] text-foreground">
-                      Material Hazards
+                      {t.materialHazards}
                     </h3>
                   </div>
                   <div className="space-y-2">
@@ -210,34 +214,31 @@ export function SynergySheet({ data, error, onClose }: Props) {
                         <div
                           key={i}
                           onClick={() => setExpandedHazardIdx(isExpanded ? null : i)}
-                          className={`rounded-2xl border p-4 cursor-pointer transition-colors select-none ${
-                            high
+                          className={`rounded-2xl border p-4 cursor-pointer transition-colors select-none ${high
                               ? "border-[oklch(0.62_0.22_27_/_50%)] bg-[oklch(0.95_0.05_30)] hover:bg-[oklch(0.95_0.05_30)/85]"
                               : "border-[oklch(0.72_0.17_60_/_50%)] bg-[oklch(0.97_0.04_70)] hover:bg-[oklch(0.97_0.04_70)/85]"
-                          }`}
+                            }`}
                         >
                           <div className="mb-1 flex items-center justify-between">
                             <p
-                              className={`text-sm font-medium ${
-                                high
+                              className={`text-sm font-medium ${high
                                   ? "text-[oklch(0.45_0.2_27)]"
                                   : "text-[oklch(0.5_0.15_60)]"
-                              }`}
+                                }`}
                             >
                               {h.name}
                             </p>
                             <div className="flex items-center gap-2">
                               <span
-                                className={`rounded-full px-2 py-0.5 text-[9px] uppercase tracking-widest text-white ${
-                                  high
+                                className={`rounded-full px-2 py-0.5 text-[9px] uppercase tracking-widest text-white ${high
                                     ? "bg-[oklch(0.62_0.22_27)]"
                                     : "bg-[oklch(0.72_0.17_60)]"
-                                }`}
+                                  }`}
                               >
-                                {h.riskLevel}
+                                {h.riskLevel === "High" ? (locale === "en" ? "High" : "ከፍተኛ") : (locale === "en" ? "Medium" : "መካከለኛ")}
                               </span>
                               <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-medium">
-                                {isExpanded ? "Hide" : "Detail"}
+                                {isExpanded ? t.hide : t.detail}
                               </span>
                             </div>
                           </div>
@@ -250,11 +251,10 @@ export function SynergySheet({ data, error, onClose }: Props) {
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: "auto", opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                className={`overflow-hidden mt-2 pt-2 border-t text-[11px] leading-relaxed ${
-                                  high
+                                className={`overflow-hidden mt-2 pt-2 border-t text-[11px] leading-relaxed ${high
                                     ? "border-[oklch(0.62_0.22_27_/_20%)] text-[oklch(0.45_0.2_27)]/90"
                                     : "border-[oklch(0.72_0.17_60_/_20%)] text-[oklch(0.5_0.15_60)]/90"
-                                }`}
+                                  }`}
                               >
                                 {h.details}
                               </motion.div>
@@ -265,7 +265,7 @@ export function SynergySheet({ data, error, onClose }: Props) {
                     })}
                     {(data.hazards ?? []).length === 0 && (
                       <p className="text-xs text-muted-foreground">
-                        No hazards detected.
+                        {t.noHazards}
                       </p>
                     )}
                   </div>
@@ -275,7 +275,7 @@ export function SynergySheet({ data, error, onClose }: Props) {
                   onClick={() => setViewState("purchase_check")}
                   className="mt-6 w-full py-3.5 rounded-full gold-gradient text-xs uppercase tracking-widest text-primary-foreground font-medium shadow-md flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity"
                 >
-                  Analyze Routine
+                  {t.analyzeRoutine}
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               </motion.div>
@@ -294,10 +294,10 @@ export function SynergySheet({ data, error, onClose }: Props) {
                   <ShoppingBag className="h-6 w-6" />
                 </div>
                 <h3 className="font-display text-2xl text-foreground mb-2 px-2 leading-tight">
-                  Do you own or intend to purchase this product?
+                  {t.doYouOwn}
                 </h3>
                 <p className="text-xs text-muted-foreground mb-8 px-4">
-                  This lets us build a routine guide or suggest botanic swaps.
+                  {t.buildGuide}
                 </p>
 
                 <div className="flex w-full gap-4">
@@ -305,13 +305,13 @@ export function SynergySheet({ data, error, onClose }: Props) {
                     onClick={() => handlePurchaseChoice(true)}
                     className="flex-1 py-4 rounded-2xl border border-gold bg-secondary/35 text-gold font-display font-medium text-lg hover:bg-secondary/50 transition-all shadow-sm"
                   >
-                    YES
+                    {t.yes}
                   </button>
                   <button
                     onClick={() => handlePurchaseChoice(false)}
                     className="flex-1 py-4 rounded-2xl border border-border bg-card text-foreground font-display text-lg hover:bg-muted/40 transition-all"
                   >
-                    NO
+                    {t.no}
                   </button>
                 </div>
               </motion.div>
@@ -332,16 +332,16 @@ export function SynergySheet({ data, error, onClose }: Props) {
                       <CheckCircle2 className="h-6 w-6" />
                     </div>
                     <h3 className="font-display text-xl text-foreground mb-3">
-                      Clean &amp; Safe Formula
+                      {t.cleanSafeFormula}
                     </h3>
                     <p className="text-sm leading-relaxed text-foreground/80 px-4 bg-secondary/30 border border-gold/20 rounded-2xl p-5 mb-8">
-                      Awesome! It is clear of toxic elements. You can safely pick it up at the WeVa Sphere marketplace.
+                      {t.clearOfToxic}
                     </p>
                     <button
                       onClick={onClose}
                       className="w-full py-3.5 rounded-full gold-gradient text-xs uppercase tracking-widest text-primary-foreground font-medium shadow-md"
                     >
-                      Done
+                      {t.done}
                     </button>
                   </div>
                 ) : (
@@ -349,16 +349,16 @@ export function SynergySheet({ data, error, onClose }: Props) {
                     <div className="flex items-center gap-2 mb-4">
                       <HeartHandshake className="h-5 w-5 text-gold" />
                       <h3 className="font-display text-lg text-foreground">
-                        Recommended Botanical Swap
+                        {t.recommendedSwap}
                       </h3>
                     </div>
                     <p className="text-xs text-muted-foreground mb-4">
-                      This formula contains harmful elements. We highly recommend swapping it for an organic alternative:
+                      {t.formulaHarmful}
                     </p>
 
                     <div className="rounded-2xl border border-gold bg-secondary/20 p-5 mb-8 relative overflow-hidden">
                       <div className="absolute right-3 top-3 rounded-full border border-gold/30 bg-card px-2 py-0.5 text-[8px] uppercase tracking-widest text-gold font-medium">
-                        Pure Botanic
+                        {t.pureBotanic}
                       </div>
                       <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
                         {data.alternativeProduct?.brand || "Botanical Organics"}
@@ -368,7 +368,9 @@ export function SynergySheet({ data, error, onClose }: Props) {
                       </h4>
                       <p className="mt-3 text-xs leading-relaxed text-foreground/80">
                         {data.alternativeProduct?.reason ||
-                          "A cleaner alternative curated specifically to soothe your skin profile."}
+                          (locale === "en"
+                            ? "A cleaner alternative curated specifically to soothe your skin profile."
+                            : "የቆዳዎን ሁኔታ ለማረጋጋት በተለይ የተዘጋጀ ንጹህ አማራጭ ምርት።")}
                       </p>
                     </div>
 
@@ -377,16 +379,16 @@ export function SynergySheet({ data, error, onClose }: Props) {
                         href="https://abi-cosmetics.com/shop-2/"
                         target="_blank"
                         rel="noreferrer"
-                        className="w-full py-3.5 rounded-full gold-gradient text-xs uppercase tracking-widest text-primary-foreground font-medium shadow-md flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity text-center"
+                        className="w-full py-3.5 rounded-full gold-gradient text-xs uppercase tracking-widest text-primary-foreground font-medium shadow-md flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity text-center font-sans"
                       >
-                        Shop Botanical Alternative
+                        {t.shopAlternative}
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                       <button
                         onClick={onClose}
                         className="w-full py-3.5 rounded-full border border-border bg-card text-xs uppercase tracking-widest text-muted-foreground font-medium hover:bg-muted/40 transition-colors"
                       >
-                        Return to Hub
+                        {t.returnToHub}
                       </button>
                     </div>
                   </div>
@@ -408,26 +410,28 @@ export function SynergySheet({ data, error, onClose }: Props) {
                     <Clock className="h-4 w-4 text-gold" />
                     <div>
                       <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-                        Suggested Integration
+                        {t.suggestedIntegration}
                       </p>
                       <p className="text-xs text-foreground font-medium">
-                        {data.usageDetails?.whenToUse || "Morning / Night routine"}
+                        {data.usageDetails?.whenToUse || (locale === "en" ? "Morning / Night routine" : "የጠዋት / ማታ ልምምድ")}
                       </p>
                     </div>
                   </div>
                   <div className="rounded-full border border-gold/40 px-3 py-0.5 text-[9px] uppercase tracking-widest text-gold font-medium">
-                    Routine Active
+                    {t.routineActive}
                   </div>
                 </div>
 
                 {/* how to use */}
                 <section className="mb-6">
                   <h4 className="text-[11px] uppercase tracking-[0.35em] text-muted-foreground mb-2">
-                    Application Guide
+                    {t.applicationGuide}
                   </h4>
                   <p className="text-xs leading-relaxed text-foreground/80 bg-card border border-border rounded-2xl p-4">
                     {data.usageDetails?.howToUse ||
-                      "Apply a small pea-sized amount onto dry skin. Smooth outward and tap lightly until absorbed."}
+                      (locale === "en"
+                        ? "Apply a small pea-sized amount onto dry skin. Smooth outward and tap lightly until absorbed."
+                        : "በጥቂቱ ወስደው በደረቅ ቆዳ ላይ ይቀቡት። ሙሉ በሙሉ እስኪመጠጥ ድረስ ቀስ እያደረጉ ማሸት።")}
                   </p>
                 </section>
 
@@ -436,7 +440,7 @@ export function SynergySheet({ data, error, onClose }: Props) {
                   <div className="flex items-center gap-2 mb-4">
                     <TrendingUp className="h-4 w-4 text-gold" />
                     <h4 className="text-[11px] uppercase tracking-[0.35em] text-foreground">
-                      30-Day Skin Timeline
+                      {t.timeline30Day}
                     </h4>
                   </div>
 
@@ -445,33 +449,33 @@ export function SynergySheet({ data, error, onClose }: Props) {
                     <div className="relative">
                       <div className="absolute -left-6 top-1 h-3 w-3 rounded-full border border-gold bg-background" />
                       <h5 className="font-display text-sm text-gold font-medium">
-                        Day 3 · Initial Calming
+                        {t.day3Calming}
                       </h5>
                       <p className="text-xs leading-relaxed text-muted-foreground mt-1">
                         {data.usageDetails?.timeline?.day3 ||
-                          "Assess early reactions. Minor redness should begin calming."}
+                          (locale === "en" ? "Assess early reactions. Minor redness should begin calming." : "የመጀመሪያ ደረጃ የቆዳ ምላሽን ይከታተሉ። መጠነኛ መቅላት መረጋጋት ይጀምራል።")}
                       </p>
                     </div>
                     {/* Day 14 */}
                     <div className="relative">
                       <div className="absolute -left-6 top-1 h-3 w-3 rounded-full border border-gold bg-background" />
                       <h5 className="font-display text-sm text-gold font-medium">
-                        Day 14 · Barrier Reset
+                        {t.day14Reset}
                       </h5>
                       <p className="text-xs leading-relaxed text-muted-foreground mt-1">
                         {data.usageDetails?.timeline?.day14 ||
-                          "Skin cellular turnover increases. Textural refinement and hydration levels adjust."}
+                          (locale === "en" ? "Skin cellular turnover increases. Textural refinement and hydration levels adjust." : "የቆዳ ሴሎች መታደስ ይጨምራል። የቆዳ ገጽታ ልስላሴ እና የእርጥበት መጠን ይስተካከላል።")}
                       </p>
                     </div>
                     {/* Day 30 */}
                     <div className="relative">
                       <div className="absolute -left-6 top-1 h-3 w-3 rounded-full border border-gold bg-gold" />
                       <h5 className="font-display text-sm text-gold font-medium">
-                        Day 30 · Transformation
+                        {t.day30Trans}
                       </h5>
                       <p className="text-xs leading-relaxed text-muted-foreground mt-1">
                         {data.usageDetails?.timeline?.day30 ||
-                          "Deep dermal benefits lock in. Noticeable structural glow and elasticity returns."}
+                          (locale === "en" ? "Deep dermal benefits lock in. Noticeable structural glow and elasticity returns." : "የውስጠኛው ቆዳ ጥቅሞች ይረጋጋሉ። የሚታይ የተፈጥሮ ውበትና የመለጠጥ ኃይል ይመለሳል።")}
                       </p>
                     </div>
                   </div>
@@ -481,7 +485,7 @@ export function SynergySheet({ data, error, onClose }: Props) {
                   onClick={onClose}
                   className="w-full py-3.5 rounded-full gold-gradient text-xs uppercase tracking-widest text-primary-foreground font-medium shadow-md hover:opacity-90 transition-opacity"
                 >
-                  Start Routine Coaching
+                  {t.startCoaching}
                 </button>
               </motion.div>
             )}

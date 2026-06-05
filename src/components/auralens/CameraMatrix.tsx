@@ -4,13 +4,15 @@ import { useCallback, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Scan } from "lucide-react";
+import { translations, type Locale } from "@/lib/translations";
 
 interface Props {
   onClose: () => void;
   onCapture: (base64: string) => Promise<void>;
+  locale: Locale;
 }
 
-export function CameraMatrix({ onClose, onCapture }: Props) {
+export function CameraMatrix({ onClose, onCapture, locale }: Props) {
   const webcamRef = useRef<Webcam>(null);
   const [processing, setProcessing] = useState(false);
 
@@ -43,6 +45,8 @@ export function CameraMatrix({ onClose, onCapture }: Props) {
       setProcessing(false);
     }
   }, [onCapture]);
+
+  const t = translations[locale];
 
   return (
     <div className="absolute inset-0 z-30 bg-black">
@@ -83,8 +87,8 @@ export function CameraMatrix({ onClose, onCapture }: Props) {
           {!processing && (
             <div className="absolute inset-x-2 top-0 h-0.5 bg-gradient-to-r from-transparent via-[oklch(0.82_0.13_85)] to-transparent scan-line" />
           )}
-          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.4em] text-gold/90">
-            Align product label
+          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.4em] text-gold/90 text-center w-64">
+            {t.alignLabel}
           </div>
         </div>
       </div>
@@ -102,12 +106,12 @@ export function CameraMatrix({ onClose, onCapture }: Props) {
             >
               <div className="flex items-center gap-2">
                 <Scan className="h-4 w-4 text-gold animate-pulse" />
-                <p className="font-display text-lg shimmer-text">
-                  Decoding botanical matrix…
+                <p className="font-display text-lg shimmer-text text-center">
+                  {t.decodingMatrix}
                 </p>
               </div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
-                Llama 4 Scout · Vision
+              <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground text-center">
+                {t.llamaScout}
               </p>
             </motion.div>
           ) : (
@@ -118,9 +122,9 @@ export function CameraMatrix({ onClose, onCapture }: Props) {
               exit={{ opacity: 0 }}
               whileTap={{ scale: 0.96 }}
               onClick={handleCapture}
-              className="w-full rounded-full gold-gradient py-4 font-display text-lg text-primary-foreground tracking-wide shadow-[0_10px_40px_oklch(0.82_0.13_85_/_30%)]"
+              className="w-full rounded-full gold-gradient py-4 font-display text-lg text-primary-foreground tracking-wide shadow-[0_10px_40px_oklch(0.82_0.13_85_/_30%)] text-center"
             >
-              Analyze Formula
+              {t.analyzeFormula}
             </motion.button>
           )}
         </AnimatePresence>

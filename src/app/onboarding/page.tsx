@@ -4,36 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Droplet, Sparkles, ShieldAlert, Zap, ArrowRight, ArrowLeft } from "lucide-react";
+import { translations, type Locale } from "@/lib/translations";
 
 type SkinType = "Dry" | "Oily" | "Sensitive" | "Acne-Prone";
 type AgeRange = "Under 20" | "20-29" | "30-39" | "40-49" | "50+";
-
-const skinTypesList: { type: SkinType; label: string; desc: string; icon: any }[] = [
-  {
-    type: "Dry",
-    label: "Dry Skin",
-    desc: "Feels tight, flakey, or parched. Needs hydration.",
-    icon: Droplet,
-  },
-  {
-    type: "Oily",
-    label: "Oily Skin",
-    desc: "Excess shine, visible pores, and sebum production.",
-    icon: Zap,
-  },
-  {
-    type: "Sensitive",
-    label: "Sensitive Skin",
-    desc: "Prone to redness, irritation, or reactions.",
-    icon: ShieldAlert,
-  },
-  {
-    type: "Acne-Prone",
-    label: "Acne-Prone Skin",
-    desc: "Frequent blemishes, breakouts, or clogged pores.",
-    icon: Sparkles,
-  },
-];
 
 const ageRangesList: AgeRange[] = ["Under 20", "20-29", "30-39", "40-49", "50+"];
 
@@ -44,12 +18,23 @@ export default function OnboardingPage() {
   const [selectedSkin, setSelectedSkin] = useState<SkinType | null>(null);
   const [selectedAge, setSelectedAge] = useState<AgeRange | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [locale, setLocale] = useState<Locale>("en");
 
   useEffect(() => {
     setIsMounted(true);
+    const savedLocale = localStorage.getItem("bloomy:locale") as Locale;
+    if (savedLocale === "en" || savedLocale === "am") {
+      setLocale(savedLocale);
+    }
   }, []);
 
   if (!isMounted) return null;
+
+  const handleToggleLocale = () => {
+    const next = locale === "en" ? "am" : "en";
+    setLocale(next);
+    localStorage.setItem("bloomy:locale", next);
+  };
 
   const handleNext = () => {
     if (step === 1 && selectedSkin) {
@@ -58,7 +43,7 @@ export default function OnboardingPage() {
     } else if (step === 2 && selectedAge) {
       // Save profile and redirect
       localStorage.setItem(
-        "auralens:profile",
+        "bloomy:profile",
         JSON.stringify({
           skinType: selectedSkin,
           age: selectedAge,
@@ -72,6 +57,47 @@ export default function OnboardingPage() {
     if (step === 2) {
       setDirection(-1);
       setStep(1);
+    }
+  };
+
+  const t = translations[locale];
+
+  const skinTypesList: { type: SkinType; label: string; desc: string; icon: any }[] = [
+    {
+      type: "Dry",
+      label: t.drySkin,
+      desc: t.drySkinDesc,
+      icon: Droplet,
+    },
+    {
+      type: "Oily",
+      label: t.oilySkin,
+      desc: t.oilySkinDesc,
+      icon: Zap,
+    },
+    {
+      type: "Sensitive",
+      label: t.sensitiveSkin,
+      desc: t.sensitiveSkinDesc,
+      icon: ShieldAlert,
+    },
+    {
+      type: "Acne-Prone",
+      label: t.acneProneSkin,
+      desc: t.acneProneSkinDesc,
+      icon: Sparkles,
+    },
+  ];
+
+  const translatedAgeLabel = (age: AgeRange) => {
+    if (locale === "en") return age;
+    switch (age) {
+      case "Under 20": return "ከ 20 በታች";
+      case "20-29": return "ከ 20-29";
+      case "30-39": return "ከ 30-39";
+      case "40-49": return "ከ 40-49";
+      case "50+": return "50 በላይ";
+      default: return age;
     }
   };
 
@@ -97,11 +123,20 @@ export default function OnboardingPage() {
       <div className="pointer-events-none absolute bottom-0 right-0 h-64 w-64 rounded-full bg-[oklch(0.82_0.13_85_/_8%)] blur-3xl" />
 
       {/* header */}
-      <header className="relative z-10 text-center mt-6">
-        <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
-          Aesthetic Profile
-        </p>
-        <h1 className="font-display text-3xl gold-text-gradient mt-1">AuraLens</h1>
+      <header className="relative z-10 flex items-center justify-between mt-6">
+        <div className="w-10" /> {/* placeholder for balancing layout */}
+        <div className="text-center flex-1">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
+            {locale === "en" ? "Aesthetic Profile" : "የውበት መገለጫ"}
+          </p>
+          <h1 className="font-display text-3xl gold-text-gradient mt-1">Bloomy</h1>
+        </div>
+        <button
+          onClick={handleToggleLocale}
+          className="text-xs font-semibold px-3 py-1.5 rounded-full border border-border bg-card hover:border-gold/50 transition-colors text-gold"
+        >
+          {locale === "en" ? "አማርኛ" : "English"}
+        </button>
       </header>
 
       {/* stepper progress indicator */}
@@ -134,10 +169,10 @@ export default function OnboardingPage() {
             >
               <div className="text-center mb-2">
                 <h2 className="font-display text-xl text-foreground">
-                  Select Your Skin Type
+                  {t.skinTypeSelection}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-1">
-                  We customize hazard levels to match your profile.
+                  {t.skinTypeDesc}
                 </p>
               </div>
 
@@ -189,10 +224,10 @@ export default function OnboardingPage() {
             >
               <div className="text-center mb-4">
                 <h2 className="font-display text-xl text-foreground">
-                  What is Your Age Group?
+                  {t.ageSelection}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Helps target relevant anti-aging or youth-preserving ingredients.
+                  {t.ageDesc}
                 </p>
               </div>
 
@@ -210,7 +245,7 @@ export default function OnboardingPage() {
                           : "border-border bg-card/60 text-foreground hover:bg-card"
                       }`}
                     >
-                      {age}
+                      {translatedAgeLabel(age)}
                     </motion.button>
                   );
                 })}
@@ -228,7 +263,7 @@ export default function OnboardingPage() {
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-border bg-card text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Back
+            {t.back}
           </button>
         ) : (
           <div /> // empty space to keep alignment
@@ -243,7 +278,7 @@ export default function OnboardingPage() {
               : "gold-gradient hover:opacity-90"
           }`}
         >
-          {step === 2 ? "Complete" : "Continue"}
+          {step === 2 ? t.complete : t.continue}
           <ArrowRight className="h-3.5 w-3.5" />
         </button>
       </footer>

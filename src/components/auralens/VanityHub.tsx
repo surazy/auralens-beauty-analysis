@@ -5,18 +5,25 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Camera, Sparkles, Clock, Droplet, History, CheckCircle2, Bookmark, Flame, Zap } from "lucide-react";
 import { db, type ScanRecord } from "@/lib/db";
+import { translations, type Locale } from "@/lib/translations";
 
 interface Props {
   skinType: string;
   age: string;
   onLaunchCamera: () => void;
+  locale: Locale;
+  onToggleLocale: () => void;
 }
 
-export function VanityHub({ skinType, age, onLaunchCamera }: Props) {
+export function VanityHub({ skinType, age, onLaunchCamera, locale, onToggleLocale }: Props) {
   const [activeRoutine, setActiveRoutine] = useState<ScanRecord | null>(null);
   const [activeSwap, setActiveSwap] = useState<ScanRecord | null>(null);
   const [usedToday, setUsedToday] = useState(false);
   const [wishlistAdded, setWishlistAdded] = useState(false);
+
+  // Hidden Presentation Sandbox Mode state
+  const [sandboxActive, setSandboxActive] = useState(false);
+  const [clickCount, setClickCount] = useState(0);
 
   useEffect(() => {
     async function loadHistoryItems() {
@@ -31,36 +38,79 @@ export function VanityHub({ skinType, age, onLaunchCamera }: Props) {
     }
     loadHistoryItems();
 
-    const checked = localStorage.getItem("auralens:used_today");
+    const checked = localStorage.getItem("bloomy:used_today");
     if (checked === new Date().toDateString()) {
       setUsedToday(true);
     }
 
-    const wishlist = localStorage.getItem("auralens:wishlist_added");
+    const wishlist = localStorage.getItem("bloomy:wishlist_added");
     if (wishlist === "true") {
       setWishlistAdded(true);
     }
+
+    setSandboxActive(localStorage.getItem("bloomy:sandbox") === "true");
   }, []);
 
   const handleToggleUsed = () => {
     if (usedToday) {
-      localStorage.removeItem("auralens:used_today");
+      localStorage.removeItem("bloomy:used_today");
       setUsedToday(false);
     } else {
-      localStorage.setItem("auralens:used_today", new Date().toDateString());
+      localStorage.setItem("bloomy:used_today", new Date().toDateString());
       setUsedToday(true);
     }
   };
 
   const handleToggleWishlist = () => {
     if (wishlistAdded) {
-      localStorage.removeItem("auralens:wishlist_added");
+      localStorage.removeItem("bloomy:wishlist_added");
       setWishlistAdded(false);
     } else {
-      localStorage.setItem("auralens:wishlist_added", "true");
+      localStorage.setItem("bloomy:wishlist_added", "true");
       setWishlistAdded(true);
     }
   };
+
+  const handleTitleClick = () => {
+    const nextCount = clickCount + 1;
+    setClickCount(nextCount);
+    if (nextCount >= 5) {
+      const nextSandbox = !sandboxActive;
+      setSandboxActive(nextSandbox);
+      localStorage.setItem("bloomy:sandbox", nextSandbox ? "true" : "false");
+      setClickCount(0);
+      alert(nextSandbox ? "Sandbox Override Mode: ACTIVE" : "Sandbox Override Mode: INACTIVE");
+      window.location.reload();
+    }
+  };
+
+  const t = translations[locale];
+
+  // Map database categories to localized versions
+  const translatedSkinType =
+    skinType === "Dry"
+      ? t.drySkin
+      : skinType === "Oily"
+        ? t.oilySkin
+        : skinType === "Sensitive"
+          ? t.sensitiveSkin
+          : skinType === "Acne-Prone"
+            ? t.acneProneSkin
+            : skinType;
+
+  const translatedAge =
+    age === "Under 20"
+      ? (locale === "en" ? "Under 20" : "ከ 20 በታች")
+      : age === "20-29"
+        ? (locale === "en" ? "20-29" : "ከ 20-29")
+        : age === "30-39"
+          ? (locale === "en" ? "30-39" : "ከ 30-39")
+          : age === "40-49"
+            ? (locale === "en" ? "40-49" : "ከ 40-49")
+            : age === "50+"
+              ? (locale === "en" ? "50+" : "50 በላይ")
+              : age;
+
   return (
     <div className="relative flex h-full w-full flex-col overflow-y-auto bg-background [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-8">
       {/* ambient gold glow */}
@@ -69,19 +119,32 @@ export function VanityHub({ skinType, age, onLaunchCamera }: Props) {
 
       {/* header */}
       <header className="relative z-10 flex items-center justify-between px-6 pt-12">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
-            Maison
-          </p>
-          <h1 className="font-display text-3xl gold-text-gradient">AuraLens</h1>
+        <div onClick={handleTitleClick} className="cursor-pointer select-none">
+          {/* <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
+            {t.maison}
+          </p> */}
+          <h1 className="font-display text-3xl gold-text-gradient flex items-center gap-1.5">
+            Bloomy
+            {sandboxActive && (
+              <span className="h-2 w-2 rounded-full bg-gold animate-pulse" title="Sandbox Active" />
+            )}
+          </h1>
         </div>
-        <Link
-          href="/history"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
-          aria-label="Open archive"
-        >
-          <History className="h-4 w-4 text-gold" />
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onToggleLocale}
+            className="text-xs font-semibold px-3 py-1.5 rounded-full border border-border bg-card hover:border-gold/50 transition-colors text-gold"
+          >
+            {locale === "en" ? "አማርኛ" : "English"}
+          </button>
+          <Link
+            href="/history"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
+            aria-label="Open archive"
+          >
+            <History className="h-4 w-4 text-gold" />
+          </Link>
+        </div>
       </header>
 
       {/* profile card */}
@@ -95,33 +158,33 @@ export function VanityHub({ skinType, age, onLaunchCamera }: Props) {
           <div>
             <div className="flex items-center gap-2">
               <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-                Active State
+                {t.activeState}
               </p>
               <Link
                 href="/onboarding"
                 className="text-[10px] uppercase tracking-wider text-gold hover:underline"
               >
-                Edit
+                {t.edit}
               </Link>
             </div>
             <p className="mt-2 font-display text-xl text-foreground">
-              {skinType} Skin
+              {translatedSkinType}
             </p>
             <p className="text-xs text-muted-foreground">
-              Age {age} · pH 5.4
+              {t.age} {translatedAge} · pH 5.4
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-1.5 rounded-full border border-gold/30 px-3 py-1">
               <Droplet className="h-3 w-3 text-gold" />
-              <span className="text-[10px] tracking-widest text-gold">
-                HYDRA 62%
+              <span className="text-[10px] tracking-widest text-gold uppercase">
+                {t.hydra} 62%
               </span>
             </div>
             <div className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1">
               <Sparkles className="h-3 w-3 text-muted-foreground" />
-              <span className="text-[10px] tracking-widest text-muted-foreground">
-                GLOW 71
+              <span className="text-[10px] tracking-widest text-muted-foreground uppercase">
+                {t.glow} 71
               </span>
             </div>
           </div>
@@ -130,8 +193,8 @@ export function VanityHub({ skinType, age, onLaunchCamera }: Props) {
 
       {/* central FAB */}
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-10">
-        <p className="mb-5 text-[10px] uppercase tracking-[0.4em] text-muted-foreground">
-          Tap to scan a formula
+        <p className="mb-5 text-[10px] uppercase tracking-[0.4em] text-muted-foreground text-center">
+          {t.tapToScan}
         </p>
         <motion.button
           whileTap={{ scale: 0.94 }}
@@ -141,22 +204,22 @@ export function VanityHub({ skinType, age, onLaunchCamera }: Props) {
           <div className="absolute inset-2 rounded-full border border-[oklch(0.1_0_0_/_15%)]" />
           <Camera className="h-12 w-12" strokeWidth={1.5} />
         </motion.button>
-        <p className="mt-6 font-display text-lg text-foreground">
-          Begin the Ritual
+        <p className="mt-6 font-display text-lg text-foreground text-center">
+          {t.beginscan}
         </p>
       </div>
 
-      {/* ritual timeline & reminder */}
+      {/* scan timeline & reminder */}
       <section className="relative z-10 mx-6 mb-8 rounded-3xl glass p-5">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="h-3.5 w-3.5 text-gold" />
             <p className="text-[11px] uppercase tracking-[0.3em] text-foreground font-semibold">
-              Ritual Timeline
+              {t.scanTimeline}
             </p>
           </div>
           <span className="text-[9px] uppercase tracking-widest text-gold font-medium">
-            Active Tracker
+            {t.activeTracker}
           </span>
         </div>
 
@@ -170,13 +233,13 @@ export function VanityHub({ skinType, age, onLaunchCamera }: Props) {
                 </div>
                 <div className="min-w-0">
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                    AuraLens Ritual
+                    Bloomy scan
                   </p>
                   <p className="font-display text-base text-foreground font-medium">
-                    Scan a product to begin
+                    {t.scanToBegin}
                   </p>
                   <p className="text-[11px] text-muted-foreground leading-normal mt-0.5">
-                    Complete onboarding and scan your cosmetics formula label.
+                    {t.onboardingDesc}
                   </p>
                 </div>
               </div>
@@ -191,13 +254,13 @@ export function VanityHub({ skinType, age, onLaunchCamera }: Props) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                    Active Routine · {activeRoutine.brand}
+                    {t.activeRoutine} · {activeRoutine.brand}
                   </p>
                   <p className="font-display text-base text-foreground font-medium truncate">
                     {activeRoutine.productName}
                   </p>
                   <p className="text-[11px] text-muted-foreground leading-normal mt-0.5">
-                    Suggested: {activeRoutine.usageDetails?.whenToUse || "Once daily"}
+                    {t.suggested}: {activeRoutine.usageDetails?.whenToUse || (locale === "en" ? "Once daily" : "በቀን አንድ ጊዜ")}
                   </p>
                 </div>
               </div>
@@ -206,22 +269,21 @@ export function VanityHub({ skinType, age, onLaunchCamera }: Props) {
               <div className="mt-1 border-t border-border/50 pt-3 flex items-center justify-between">
                 <div>
                   <p className="text-[11px] text-foreground font-medium">
-                    Did you use this today?
+                    {t.didYouUse}
                   </p>
                   <p className="text-[9px] text-muted-foreground">
-                    Track your daily application consistency.
+                    {t.trackConsistency}
                   </p>
                 </div>
                 <motion.button
                   whileTap={{ scale: 0.94 }}
                   onClick={handleToggleUsed}
-                  className={`px-4 py-1.5 rounded-full text-[10px] uppercase tracking-wider font-semibold transition-all border ${
-                    usedToday
+                  className={`px-4 py-1.5 rounded-full text-[10px] uppercase tracking-wider font-semibold transition-all border ${usedToday
                       ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600"
                       : "border-gold/40 bg-secondary/35 text-gold hover:bg-secondary/60"
-                  }`}
+                    }`}
                 >
-                  {usedToday ? "Applied ✓" : "Log Use"}
+                  {usedToday ? t.applied : t.logUse}
                 </motion.button>
               </div>
             </div>
@@ -239,10 +301,10 @@ export function VanityHub({ skinType, age, onLaunchCamera }: Props) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] uppercase tracking-widest text-gold font-medium">
-                    Swap Alert · {activeSwap.alternativeProduct?.brand || "Botanical Swap"}
+                    {t.swapAlert} · {activeSwap.alternativeProduct?.brand || (locale === "en" ? "Botanical Swap" : "የዕፅዋት መለዋወጫ")}
                   </p>
                   <p className="font-display text-base text-foreground font-medium truncate">
-                    {activeSwap.alternativeProduct?.name || "Natural Recovery Serum"}
+                    {activeSwap.alternativeProduct?.name || (locale === "en" ? "Natural Recovery Serum" : "ተፈጥሯዊ የቆዳ ማገገሚያ")}
                   </p>
                   <p className="text-[11px] text-muted-foreground leading-normal mt-0.5 line-clamp-2">
                     {activeSwap.alternativeProduct?.reason}
@@ -254,22 +316,21 @@ export function VanityHub({ skinType, age, onLaunchCamera }: Props) {
               <div className="mt-1 border-t border-border/50 pt-3 flex items-center justify-between">
                 <div>
                   <p className="text-[11px] text-foreground font-medium">
-                    Intend to try this swap?
+                    {t.intendToTry}
                   </p>
                   <p className="text-[9px] text-muted-foreground">
-                    Save to your routine wishlist logs.
+                    {t.saveWishlist}
                   </p>
                 </div>
                 <motion.button
                   whileTap={{ scale: 0.94 }}
                   onClick={handleToggleWishlist}
-                  className={`px-4 py-1.5 rounded-full text-[10px] uppercase tracking-wider font-semibold transition-all border ${
-                    wishlistAdded
+                  className={`px-4 py-1.5 rounded-full text-[10px] uppercase tracking-wider font-semibold transition-all border ${wishlistAdded
                       ? "border-gold/40 bg-secondary/35 text-gold"
                       : "border-border bg-card text-muted-foreground hover:text-foreground font-medium"
-                  }`}
+                    }`}
                 >
-                  {wishlistAdded ? "Wishlisted ✓" : "Add Log"}
+                  {wishlistAdded ? t.wishlisted : t.addLog}
                 </motion.button>
               </div>
             </div>

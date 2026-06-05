@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const { imageBase64, skinType, age } = await request.json();
+    const { imageBase64, skinType, age, locale, sandbox } = await request.json();
 
     if (!imageBase64) {
       return Response.json(
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const systemPrompt = `You are a master cosmetic chemistry analyzer for a high-end beauty app. Read the product label in the image and identify the brand, product name, and the key active compounds / ingredients listed.
+    let systemPrompt = `You are a master cosmetic chemistry analyzer for a high-end beauty app. Read the product label in the image and identify the brand, product name, and the key active compounds / ingredients listed.
 
 Analyze these ingredients specifically for someone with ${skinType} skin, aged ${age}. Adjust the risk levels and hazard descriptions to match their profile (e.g., if a product has heavy oils and they have oily skin, flag it as a hazard; if it has drying alcohols and they have dry skin, elevate the risk to High).
 
@@ -55,6 +55,13 @@ Rules:
 - "alternativeProduct" is a safer, organic recommendation. The brand should be a realistic organic/clean beauty brand (e.g. "Tata Harper", "The Ordinary", "Herbivore Botanicals", "Indie Lee"). The name should be a realistic organic product (e.g. "Pure Nile Shea Butter", "Teff Seed Soothing Serum", "Rosehip Recovery Oil"). The reason must be a detailed sentence explaining why this alternative is excellent for someone with ${skinType} skin aged ${age}.
 - "usageDetails" specifies how to integrate this scanned product (or its alternative if unsafe) into a daily routine. Provide instructions for "howToUse", "whenToUse" (e.g., "Night routine, 3 times a week"), and realistic expectations in the "timeline" for "day3", "day14", and "day30" (e.g., skin barrier restoration, hydration levels, redness reduction).
 - Output ONLY the JSON object. No prose, no markdown fences.`;
+
+    if (locale === "am") {
+      systemPrompt += `
+
+- CRITICAL LOCALIZATION INSTRUCTION: Since the active locale is Amharic ('am'), you MUST translate all returned string values (such as brand, productName, benefit names/descriptions/details, hazard names/descriptions/details, alternative product brand/name/reason, usageDetails howToUse/whenToUse/timeline milestones) into natural Amharic script.
+- Keep the programmatic JSON keys (such as "brand", "productName", "isProductSafe", "benefits", "name", "description", "details", "hazards", "riskLevel", "alternativeProduct", "reason", "usageDetails", "howToUse", "whenToUse", "timeline", "day3", "day14", "day30") STRICTLY in English exactly as defined in the schema above so that the application parsing logic remains unbroken. Do not translate the JSON keys themselves.`;
+    }
 
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",

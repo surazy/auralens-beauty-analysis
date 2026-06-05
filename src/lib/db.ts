@@ -1,5 +1,5 @@
 /**
- * AuraLens local persistence layer.
+ * Bloomy local persistence layer.
  *
  * Uses localStorage on the web for on-device scan history.
  * Designed to be extensible for native backends (e.g. Capacitor SQLite).
@@ -31,7 +31,34 @@ export interface ScanRecord {
   progressChatLog?: Array<{ sender: "user" | "ai"; text: string; date: string }>;
 }
 
-const LS_KEY = "auralens:scans";
+const LS_KEY = "bloomy:scans";
+const OLD_LS_KEY = "auralens:scans";
+
+// Automatic client-side local storage migration
+if (typeof window !== "undefined") {
+  try {
+    // Migrate scans list
+    const oldScans = localStorage.getItem(OLD_LS_KEY);
+    if (oldScans && !localStorage.getItem(LS_KEY)) {
+      localStorage.setItem(LS_KEY, oldScans);
+      localStorage.removeItem(OLD_LS_KEY);
+    }
+
+    // Migrate other system keys
+    const keys = ["used_today", "wishlist_added", "sandbox", "locale", "profile"];
+    keys.forEach((k) => {
+      const oldVal = localStorage.getItem(`auralens:${k}`);
+      if (oldVal !== null) {
+        if (localStorage.getItem(`bloomy:${k}`) === null) {
+          localStorage.setItem(`bloomy:${k}`, oldVal);
+        }
+        localStorage.removeItem(`auralens:${k}`);
+      }
+    });
+  } catch (e) {
+    console.error("Storage migration failed:", e);
+  }
+}
 
 export const db = {
   async saveScan(

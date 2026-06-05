@@ -11,8 +11,101 @@ import {
   type AnalysisResult,
 } from "@/components/auralens/SynergySheet";
 import { db } from "@/lib/db";
+import { type Locale } from "@/lib/translations";
 
 type View = "hub" | "camera";
+
+const mockEnglishPayload: AnalysisResult = {
+  brand: "Head & Shoulders",
+  productName: "Classic Clean Anti-Dandruff Shampoo",
+  isProductSafe: false,
+  benefits: [
+    {
+      name: "Zinc Pyrithione",
+      description: "Controls scalp flaking, itching, and irritation associated with dandruff.",
+      details: "An active antimicrobial agent that targets Malassezia yeast, restoring balance to the scalp microbiome and preventing flakiness."
+    },
+    {
+      name: "Citric Acid",
+      description: "Balances pH levels and enhances natural hair shine.",
+      details: "Acts as a mild chelating agent and pH adjuster, ensuring the formula aligns with the natural acidity of the scalp."
+    }
+  ],
+  hazards: [
+    {
+      name: "Sodium Laureth Sulfate",
+      riskLevel: "Medium",
+      description: "A harsh cleansing agent that can strip natural moisture and irritate dry skin.",
+      details: "An anionic surfactant that creates thick lather but can severely compromise the lipid barrier of sensitive or dry skin."
+    },
+    {
+      name: "Methylisothiazolinone",
+      riskLevel: "High",
+      description: "A synthetic preservative known to cause contact dermatitis and skin allergies.",
+      details: "Frequently flagged as a skin sensitizer, which can lead to eczema flares, redness, and itching with repeated use."
+    }
+  ],
+  alternativeProduct: {
+    brand: "Kuriftu",
+    name: "Kuriftu Soothing Herbal Shampoo",
+    reason: "This locally sourced, botanical shampoo uses gentle plant-derived surfactants and local tea tree oil to naturally soothe the scalp and prevent dandruff without stripping skin barriers."
+  },
+  usageDetails: {
+    howToUse: "Apply to wet hair, massage gently into the scalp for 2 minutes, then rinse thoroughly. Follow with a light botanical conditioner.",
+    whenToUse: "Use 2-3 times per week, alternating with a gentle hydrating wash.",
+    timeline: {
+      day3: "Initial reduction in scalp itching and surface flaking.",
+      day14: "Dandruff significantly clears, and skin barrier pH begins to stabilize.",
+      day30: "Scalp environment is fully balanced, leaving hair strong, soft, and flakes-free."
+    }
+  }
+};
+
+const mockAmharicPayload: AnalysisResult = {
+  brand: "ሄድ ኤንድ ሾልደርስ",
+  productName: "ክላሲክ ክሊን ፎረፎር ማጥፊያ ሻምፑ",
+  isProductSafe: false,
+  benefits: [
+    {
+      name: "ዚንክ ፒሪቲዮን",
+      description: "ከፎረፎር ጋር የተያያዘ የራስ ቅል መላጥን፣ ማሳከክን እና መቆጣትን ይቆጣጠራል።",
+      details: "የፎረፎር ዋነኛ መንስኤ የሆኑትን ረቂቅ ተሕዋስያን የሚያጠፋ እና የራስ ቅልን ጤንነት የሚጠብቅ ንቁ የህክምና ውህድ ነው።"
+    },
+    {
+      name: "ሲትሪክ አሲድ",
+      description: "የፒኤች (pH) ደረጃን ያስተካክላል እንዲሁም የፀጉርን የተፈጥሮ ብርሃን ይጨምራል።",
+      details: "የራስ ቅልን ተፈጥሯዊ አሲዳማነት በመጠበቅ ፀጉር ጤናማና አንጸባራቂ እንዲሆን ይረዳል።"
+    }
+  ],
+  hazards: [
+    {
+      name: "ሶዲየም ላውሬት ሰልፌት",
+      riskLevel: "Medium",
+      description: "የራስ ቅልን የተፈጥሮ እርጥበት የሚነጥቅና ስሜታዊ ቆዳን የሚያበሳጭ ጠንካራ ማጽጃ ነው።",
+      details: "ከፍተኛ አረፋ ለመፍጠር የሚረዳ ኬሚካል ሲሆን፣ በተደጋጋሚ ጥቅም ላይ ሲውል የቆዳን የተፈጥሮ መከላከያ ንብርብር ይጎዳል።"
+    },
+    {
+      name: "ሜቲሊሶቲያዞሊኖን",
+      riskLevel: "High",
+      description: "ለቆዳ አለርጂ እና ለከፍተኛ የራስ ቅል ብስጭት መንስኤ የሚሆን ሰው ሰራሽ መከላከያ ኬሚካል ነው።",
+      details: "በቆዳ ላይ ጠንካራ አለርጂዎችን የሚያስከትል በመሆኑ በተለይ ለስሜታዊ ቆዳ ተጠቃሚዎች የቆዳ መቅላትና መቆጥቆጥን ያስከትላል።"
+    }
+  ],
+  alternativeProduct: {
+    brand: "ኩሪፍቱ",
+    name: "ኩሪፍቱ እፅዋት ሻምፑ",
+    reason: "ይህ ሙሉ በሙሉ ከተፈጥሯዊ እፅዋት የተቀመመ ሻምፑ የቆዳን እርጥበት ሳይነጥቅ ፎረፎርን ለማጥፋት እና ፀጉርን ለማለስለስ ይረዳል። ለስሜታዊ ቆዳ እጅግ በጣም ጥሩ አማራጭ ነው።"
+  },
+  usageDetails: {
+    howToUse: "ፀጉርዎን ካራሱ በኋላ ሻምፑውን በመቀባት ለ 2 ደቂቃዎች የራስ ቅልዎን ማሸት፤ ከዚያም በንጹህ ውሃ መታጠብ።",
+    whenToUse: "በሳምንት 2-3 ጊዜ በሻወር ወቅት ይጠቀሙ።",
+    timeline: {
+      day3: "የራስ ቅል ማሳከክ ይቀንሳል፣ የደረቀ ቆዳ መላጥ መሻሻል ማሳየት ይጀምራል።",
+      day14: "የፎረፎር መበራከት በከጨማሪ ሁኔታ ይቀንሳል፣ የራስ ቅል ጤንነት ይመለሳል።",
+      day30: "የራስ ቅል ጤናማና ሙሉ በሙሉ ከፎረፎር ነፃ ይሆናል፣ የፀጉር ጥንካሬ ይጨምራል።"
+    }
+  }
+};
 
 export default function HomePage() {
   const router = useRouter();
@@ -24,8 +117,28 @@ export default function HomePage() {
   const [profile, setProfile] = useState<{ skinType: string; age: string } | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
+  const [locale, setLocale] = useState<Locale>("en");
+  const [isSandbox, setIsSandbox] = useState(false);
+
   useEffect(() => {
-    const saved = localStorage.getItem("auralens:profile");
+    // Sync locale state from localStorage
+    const savedLocale = localStorage.getItem("bloomy:locale") as Locale;
+    if (savedLocale === "en" || savedLocale === "am") {
+      setLocale(savedLocale);
+    }
+
+    // Sync sandbox state
+    const params = new URLSearchParams(window.location.search);
+    const sandboxParam = params.get("sandbox") === "true";
+    const savedSandbox = localStorage.getItem("bloomy:sandbox") === "true";
+    if (sandboxParam || savedSandbox) {
+      setIsSandbox(true);
+      if (sandboxParam) {
+        localStorage.setItem("bloomy:sandbox", "true");
+      }
+    }
+
+    const saved = localStorage.getItem("bloomy:profile");
     if (!saved) {
       router.push("/onboarding");
     } else {
@@ -39,8 +152,29 @@ export default function HomePage() {
     }
   }, [router]);
 
+  const handleToggleLocale = () => {
+    const next = locale === "en" ? "am" : "en";
+    setLocale(next);
+    localStorage.setItem("bloomy:locale", next);
+  };
+
   const handleCapture = async (base64: string) => {
     setError(null);
+
+    if (isSandbox) {
+      setResult(null);
+      setError(null);
+      setView("hub");
+      setSheetOpen(true);
+      
+      // Simulate decoding delay
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      
+      const payload = locale === "am" ? mockAmharicPayload : mockEnglishPayload;
+      setResult(payload);
+      return;
+    }
+
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
@@ -51,6 +185,7 @@ export default function HomePage() {
           imageBase64: base64,
           skinType: profile?.skinType ?? "Sensitive",
           age: profile?.age ?? "30-39",
+          locale: locale,
         }),
       });
 
@@ -78,8 +213,10 @@ export default function HomePage() {
       <div className="relative mx-auto h-screen w-full max-w-md overflow-hidden bg-background flex flex-col items-center justify-center">
         {/* ambient gold glow */}
         <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[oklch(0.82_0.13_85_/_18%)] blur-3xl" />
-        <p className="font-display text-2xl gold-text-gradient animate-pulse">AuraLens</p>
-        <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground mt-2">Loading Profile</p>
+        <p className="font-display text-2xl gold-text-gradient animate-pulse">Bloomy</p>
+        <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground mt-2">
+          {locale === "en" ? "Loading Profile" : "መገለጫ በመጫን ላይ"}
+        </p>
       </div>
     );
   }
@@ -90,6 +227,8 @@ export default function HomePage() {
         skinType={profile?.skinType ?? "Sensitive"}
         age={profile?.age ?? "30-39"}
         onLaunchCamera={() => setView("camera")}
+        locale={locale}
+        onToggleLocale={handleToggleLocale}
       />
 
       <AnimatePresence>
@@ -97,6 +236,7 @@ export default function HomePage() {
           <CameraMatrix
             onClose={() => setView("hub")}
             onCapture={handleCapture}
+            locale={locale}
           />
         )}
       </AnimatePresence>
@@ -107,6 +247,7 @@ export default function HomePage() {
             data={result}
             error={error}
             onClose={() => setSheetOpen(false)}
+            locale={locale}
           />
         )}
       </AnimatePresence>

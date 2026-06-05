@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const { messages, profile, product } = await request.json();
+    const { messages, profile, product, locale } = await request.json();
 
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const usageDetails = product?.usageDetails ?? {};
     const alternativeProduct = product?.alternativeProduct ?? {};
 
-    const systemPrompt = `You are an expert cosmetic chemistry and skincare coach called "Aura Coach". You are consulting a user about their progress with a specific beauty product.
+    let systemPrompt = `You are an expert cosmetic chemistry and skincare coach called "Bloomy Coach". You are consulting a user about their progress with a specific beauty product.
 
 User Profile:
 - Skin Type: ${skinType}
@@ -44,6 +44,12 @@ Your Task:
 - Keep your responses relatively concise (1-3 sentences, max 80 words) and direct.
 - If they report side effects like dryness, stinging, redness, or burning, give practical advice: explain if it's normal (e.g. purging from retinol/acids vs. barrier damage), advise on reducing frequency or pausing, and point to soothing solutions (like natural botanical oils, soothing honey balms, or organic recovery serums).
 - Do not use markdown styling like headers or bullet points; use clean, elegant paragraph prose.`;
+
+    if (locale === "am") {
+      systemPrompt += `
+
+- CRITICAL LOCALIZATION INSTRUCTION: The user has selected the Amharic ('am') locale. You MUST write your entire response strictly in natural, grammatically correct Amharic script. Maintain the elegant, supportive, and expert tone.`;
+    }
 
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",

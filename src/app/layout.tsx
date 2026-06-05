@@ -17,11 +17,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AuraLens — Luxury Beauty Formula Scanner",
+  title: "Bloomy — Luxury Beauty Formula Scanner",
   description:
     "Scan cosmetic labels and decode skin benefits & chemical hazards with AI vision.",
   openGraph: {
-    title: "AuraLens — Luxury Beauty Formula Scanner",
+    title: "Bloomy — Luxury Beauty Formula Scanner",
     description:
       "Decode the botanical matrix of any beauty product in seconds.",
     type: "website",

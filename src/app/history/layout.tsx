@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Ritual Archive — AuraLens",
+  title: "scan Archive — Bloomy",
   description: "Your scanned beauty formulas, stored on-device.",
 };
 
