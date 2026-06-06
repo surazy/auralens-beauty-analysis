@@ -20,6 +20,8 @@ export async function POST(request: Request) {
 
     const skinType = profile?.skinType ?? "Sensitive";
     const age = profile?.age ?? "30-39";
+    const gender = profile?.gender ?? "Female";
+    const allergiesList = (profile?.allergies || []).join(", ");
     const productsList = (products || []).map((p: any) => `${p.brand} ${p.productName} (Safe: ${p.isProductSafe})`).join(", ");
 
     let systemPrompt = `You are a premium cosmetic dietician and cosmetic chemist analyst. 
@@ -27,12 +29,16 @@ Your goal is to evaluate the user's active skin profile and the cosmetic product
 Recommend internal dietary guidelines and traditional Ethiopian superfoods to maximize skin, hair, and nail health.
 
 User Context:
+- Gender: ${gender}
 - Skin Type: ${skinType}
 - Age: ${age}
+- Known Allergies: [${allergiesList}]
 - Used Products: [${productsList}]
 
 Your Guidelines:
+- Customize recommendations based on the user's gender-specific metabolic and nutritional needs.
 - Evaluate potential internal deficits linked to the skin type and current cosmetic chemical exposures.
+- CRITICAL ALLERGEN RULE: Do NOT recommend any superfoods, ingredients, or food sources containing or derived from any allergens listed in the Known Allergies list.
 - Recommend traditional Ethiopian superfoods that target these concerns:
   - Telba (Flaxseed) for dry skin, barrier repair, and moisture.
   - Habba Soda (Black Seed / Tikur Azmud) for hair growth, anti-inflammatory scalp health, and sebum balance.
@@ -73,8 +79,8 @@ Rules:
     };
 
     if (isOpenRouter) {
-      headers["HTTP-Referer"] = "https://auralens.beauty";
-      headers["X-Title"] = "AuraLens Nutrition Insights";
+      headers["HTTP-Referer"] = "https://bloomy.beauty";
+      headers["X-Title"] = "Bloomy Nutrition Insights";
     }
 
     const res = await fetch(endpoint, {

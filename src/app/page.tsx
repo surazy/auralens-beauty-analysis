@@ -119,7 +119,7 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const [profile, setProfile] = useState<{ skinType: string; age: string } | null>(null);
+  const [profile, setProfile] = useState<{ skinType: string; age: string; gender?: string; allergies?: string[] } | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
   const [locale, setLocale] = useState<Locale>("en");
@@ -167,28 +167,7 @@ export default function HomePage() {
     setError(null);
 
     if (mode === "skin") {
-      if (isSandbox) {
-        // 700 milliseconds delay for sandbox mode
-        await new Promise((resolve) => setTimeout(resolve, 700));
 
-        const skinTypeVal = locale === "am" ? "ቅባታማ ቆዳ" : "Oily Skin";
-        const focusVal = locale === "am"
-          ? "በግንባር እና በአፍንጫ አካባቢ መጠነኛ ቅባት ታይቷል።"
-          : "Moderate oiliness observed around the T-zone and forehead.";
-
-        const skinScanResult = {
-          skinType: skinTypeVal,
-          hydra: 62,
-          glow: 71,
-          createdAt: Date.now(),
-          primaryFocus: focusVal
-        };
-
-        localStorage.setItem("bloomy:skin_scan", JSON.stringify(skinScanResult));
-        setActiveTab("dashboard");
-        setView("hub");
-        return;
-      }
 
       try {
         const response = await fetch("/api/analyze-skin", {
@@ -252,8 +231,10 @@ export default function HomePage() {
         },
         body: JSON.stringify({
           imageBase64: base64,
-          skinType: profile?.skinType ?? "Sensitive",
-          age: profile?.age ?? "30-39",
+          skinType: profile?.skinType || "Sensitive",
+          age: profile?.age || "30-39",
+          gender: profile?.gender || "Female",
+          allergies: profile?.allergies || [],
           locale: locale,
         }),
       });
@@ -364,7 +345,7 @@ export default function HomePage() {
         >
           <Camera className="h-5 w-5" />
           <span className="text-[10px] mt-0.5 tracking-wider">
-            {locale === "en" ? "AuraLens" : "መነሻ"}
+            {locale === "en" ? "Scan" : "መነሻ"}
           </span>
         </button>
 

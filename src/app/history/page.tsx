@@ -542,22 +542,22 @@ function DetailSheet({
 
         {/* Bloomy Coach Progress Log */}
         <section className="mt-8 border-t border-border pt-6">
-          <div className="rounded-3xl bg-neutral-950 text-neutral-100 p-4 border border-gold/30 shadow-lg flex flex-col gap-3">
+          <div className="rounded-3xl bg-neutral-50/90 text-neutral-800 p-5 border border-gold/25 shadow-md flex flex-col gap-3.5">
             {/* Coach Header */}
-            <div className="flex items-center gap-2 pb-2 border-b border-neutral-900">
+            <div className="flex items-center gap-2 pb-2.5 border-b border-neutral-200/60">
               <div className="h-6 w-6 rounded-full bg-gold/20 flex items-center justify-center text-gold border border-gold/40">
                 <Bot className="h-3.5 w-3.5" />
               </div>
               <div>
                 <h4 className="text-xs font-display font-medium text-gold">{t.auraCoachConsult}</h4>
-                <p className="text-[9px] text-muted-foreground">{t.consistencyLog}</p>
+                <p className="text-[9px] text-neutral-400 font-medium">{t.consistencyLog}</p>
               </div>
             </div>
 
             {/* Chat Messages */}
-            <div className="space-y-3 max-h-48 overflow-y-auto p-1 scrollbar-thin">
+            <div className="space-y-3.5 max-h-72 overflow-y-auto p-1.5 scrollbar-thin">
               {chatLog.length === 0 && (
-                <p className="text-[10px] text-neutral-500 text-center py-4 italic">
+                <p className="text-[10px] text-neutral-400 text-center py-4 italic">
                   {t.coachWelcome}
                 </p>
               )}
@@ -570,14 +570,14 @@ function DetailSheet({
                       }`}
                   >
                     <div
-                      className={`rounded-2xl px-3 py-2 text-xs leading-relaxed ${isUser
-                          ? "bg-gold/15 text-gold border border-gold/25"
-                          : "bg-neutral-900 text-neutral-200 border border-neutral-800"
+                      className={`rounded-2xl px-3 py-2.5 text-xs leading-relaxed ${isUser
+                          ? "bg-gold/10 text-gold-950 border border-gold/20"
+                          : "bg-white text-neutral-800 border border-neutral-200/60 shadow-sm"
                         }`}
                     >
                       {msg.text}
                     </div>
-                    <span className="text-[8px] text-neutral-500 mt-1 px-1">
+                    <span className="text-[8px] text-neutral-400 mt-1 px-1">
                       {msg.date}
                     </span>
                   </div>
@@ -598,7 +598,7 @@ function DetailSheet({
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder={t.coachPlaceholder}
-                className="flex-1 bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-gold/50"
+                className="flex-1 bg-white border border-border rounded-xl px-3 py-2 text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-gold/50"
               />
               <button
                 type="submit"

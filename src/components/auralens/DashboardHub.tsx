@@ -40,7 +40,7 @@ const localTranslations = {
   en: {
     dashboardTitle: "Dashboard Hub",
     managementTab: "Vanity Management",
-    welcomeTitle: "Welcome to AuraLens",
+    welcomeTitle: "Welcome to Bloomy",
     onboardingText: "Scan your face or a product bottle to unlock your personalized vanity workspace.",
     scanFaceBtn: "Scan Face (Simulate)",
     scanProductBtn: "Scan Product Bottle",
@@ -78,7 +78,7 @@ const localTranslations = {
   am: {
     dashboardTitle: "ዳሽቦርድ ማዕከል",
     managementTab: "የውበት መደርደሪያ አስተዳደር",
-    welcomeTitle: "እንኳን ወደ AuraLens በደህና መጡ",
+    welcomeTitle: "እንኳን ወደ Bloomy በደህና መጡ",
     onboardingText: "ግላዊነት የተላበሰውን የውበት መደርደሪያዎን ለመክፈት ፊትዎን ወይም የምርት ጠርሙስዎን ይፈትሹ።",
     scanFaceBtn: "ፊት መርምር (አስመስል)",
     scanProductBtn: "የምርት ጠርሙስ መርምር",
@@ -118,7 +118,7 @@ const localTranslations = {
 export function DashboardHub({ locale, onToggleLocale, onSwitchTab, onLaunchCamera }: DashboardHubProps) {
   const [scans, setScans] = useState<ScanRecord[]>([]);
   const [skinScan, setSkinScan] = useState<SkinScanPayload | null>(null);
-  const [profile, setProfile] = useState<{ skinType: string; age: string } | null>(null);
+  const [profile, setProfile] = useState<{ skinType: string; age: string; gender?: string; allergies?: string[] } | null>(null);
   
   // Interactive Vanity shelf selected item
   const [selectedProduct, setSelectedProduct] = useState<ScanRecord | null>(null);
@@ -416,9 +416,53 @@ export function DashboardHub({ locale, onToggleLocale, onSwitchTab, onLaunchCame
               <h3 className="font-display text-xl text-emerald-950 font-bold mt-0.5">
                 {skinScan ? formatSkinType(skinScan.skinType) : formatSkinType(profile?.skinType || "Sensitive")}
               </h3>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                {locale === "en" ? "Age Group" : "የዕድሜ ክልል"} {profile?.age || "30-39"} · pH 5.4 · {locale === "en" ? "Bio-Optimized" : "ለቆዳ ተስማሚ"}
-              </p>
+              
+              <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs text-neutral-500 mt-1">
+                <span>
+                  {locale === "en" ? "Age Group:" : "የዕድሜ ክልል:"} {profile?.age || "30-39"}
+                </span>
+                <span>·</span>
+                <span>
+                  {locale === "en" ? "Gender:" : "ጾታ:"} {profile?.gender ? (locale === "en" ? profile.gender : (profile.gender === "Male" ? "ወንድ" : "ሴት")) : (locale === "en" ? "Not set" : "አልተገለጸም")}
+                </span>
+                <span>·</span>
+                <span></span>
+                <span>·</span>
+                <span className="text-emerald-600 font-medium">{locale === "en" ? "Bio-Optimized" : "ለቆዳ ተስማሚ"}</span>
+              </div>
+
+              {/* Allergies tag display */}
+              {profile?.allergies && profile.allergies.length > 0 && (
+                <div className="mt-3.5 pt-2.5 border-t border-emerald-100/30">
+                  <p className="text-[9px] uppercase tracking-wider text-emerald-800 font-bold mb-1">
+                    {locale === "en" ? "Food Allergies:" : "የምግብ አለርጂዎች:"}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {profile.allergies.map((allergy, idx) => {
+                      const commonAllergens = [
+                        { key: "Peanuts", en: "Peanuts", am: "ለውዝ (Peanuts)" },
+                        { key: "Tree Nuts", en: "Tree Nuts", am: "የዛፍ ፍሬዎች (Tree Nuts)" },
+                        { key: "Dairy", en: "Dairy / Milk", am: "የወተት ተዋጽኦ (Dairy)" },
+                        { key: "Gluten / Wheat", en: "Gluten / Wheat", am: "ግሉተን / ስንዴ (Gluten)" },
+                        { key: "Soy", en: "Soy / Soybeans", am: "አኩሪ አተር (Soy)" },
+                        { key: "Seafood / Fish", en: "Seafood / Fish", am: "የባህር ምግቦች (Seafood)" },
+                        { key: "Eggs", en: "Eggs", am: "እንቁላል (Eggs)" },
+                        { key: "Sesame", en: "Sesame", am: "ሰሊጥ (Sesame)" }
+                      ];
+                      const match = commonAllergens.find(c => c.key === allergy);
+                      const displayAllergy = match ? (locale === "en" ? match.en : match.am) : allergy;
+                      return (
+                        <span 
+                          key={idx} 
+                          className="text-[9px] bg-rose-50 text-rose-700 border border-rose-100/40 rounded px-1.5 py-0.5 font-medium"
+                        >
+                          {displayAllergy}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Progress metrics bars */}
               {skinScan && (

@@ -28,18 +28,29 @@ export async function POST(request: Request) {
     let systemPrompt = `You are a visual dermatologist and aesthetic skincare analyst for a high-end beauty app.
 Analyze the user's face selfie in the image and perform a detailed skincare assessment.
 
-Evaluate their face image to determine:
+CRITICAL FACE DETECTION RULE:
+First, inspect the image to verify if it contains a clearly visible human face.
+- If there is NO human face in the image, or if the image is too dark, blurry, or showing a non-face object (e.g. a wall, hand, product bottle, or table), you MUST NOT perform any skin analysis. Instead, return a JSON object with only a single "error" key:
+  { "error": "No human face detected. Please capture a clear selfie inside the oval face guide under good lighting." }
+- If a human face is clearly present, proceed with the analysis.
+
+If a human face is detected, evaluate their face image to determine:
 1. Skin Type (Select strictly one from: "Dry", "Oily", "Sensitive", "Acne-Prone").
 2. Hydra Score (Provide a single integer score out of 100 based on visible moisture, plumpness, or dry scaling).
 3. Glow Score (Provide a single integer score out of 100 based on skin radiance, light reflection, and overall glow).
 4. Primary Focus (Provide a brief, single-sentence summary of 10-20 words describing the main skin condition observed, e.g. "Mild redness around the cheeks requiring barrier replenishment" or "Optimal hydration with slight surface oiliness in the T-zone").
 
-Return STRICTLY a raw JSON object with this schema:
+Return STRICTLY a raw JSON object with this schema when a face is detected:
 {
   "skinType": "string",
   "hydraScore": number,
   "glowScore": number,
   "primaryFocus": "string"
+}
+
+If no human face is detected:
+{
+  "error": "string"
 }
 
 Rules:
@@ -52,8 +63,8 @@ Rules:
     if (locale === "am") {
       systemPrompt += `
 
-- CRITICAL LOCALIZATION INSTRUCTION: Since the active locale is Amharic ('am'), you MUST translate the text string values for "skinType" and "primaryFocus" into flawless Amharic Ge'ez script (e.g. translate "Oily" to "ቅባታማ" or "Sensitive" to "ስሜታዊ").
-- Keep the JSON keys ("skinType", "hydraScore", "glowScore", "primaryFocus") STRICTLY in English exactly as defined in the schema above so that parsing logic does not break.`;
+- CRITICAL LOCALIZATION INSTRUCTION: Since the active locale is Amharic ('am'), you MUST translate the text string values for "skinType", "primaryFocus", and any "error" message into flawless Amharic Ge'ez script (e.g. translate "Oily" to "ቅባታማ" or "Sensitive" to "ስሜታዊ").
+- Keep the JSON keys ("skinType", "hydraScore", "glowScore", "primaryFocus", "error") STRICTLY in English exactly as defined in the schema above so that parsing logic does not break.`;
     }
 
     const headers: Record<string, string> = {
@@ -63,7 +74,7 @@ Rules:
 
     if (isOpenRouter) {
       headers["HTTP-Referer"] = "https://auralens.beauty";
-      headers["X-Title"] = "AuraLens Beauty Analysis";
+      headers["X-Title"] = "Bloomy Beauty Analysis";
     }
 
     const res = await fetch(endpoint, {
@@ -107,6 +118,9 @@ Rules:
 
     try {
       const parsed = JSON.parse(content);
+      if (parsed.error) {
+        return Response.json({ ok: false, error: parsed.error });
+      }
       return Response.json({ ok: true, result: parsed });
     } catch {
       return Response.json(

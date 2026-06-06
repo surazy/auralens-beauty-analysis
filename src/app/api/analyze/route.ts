@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const { imageBase64, skinType, age, locale, sandbox } = await request.json();
+    const { imageBase64, skinType, age, gender, allergies, locale, sandbox } = await request.json();
 
     if (!imageBase64) {
       return Response.json(
@@ -19,9 +19,11 @@ export async function POST(request: Request) {
       );
     }
 
+    const genderStr = gender || "Female";
+
     let systemPrompt = `You are a master cosmetic chemistry analyzer for a high-end beauty app. Read the product label in the image and identify the brand, product name, and the key active compounds / ingredients listed.
 
-Analyze these ingredients specifically for someone with ${skinType} skin, aged ${age}. Adjust the risk levels and hazard descriptions to match their profile (e.g., if a product has heavy oils and they have oily skin, flag it as a hazard; if it has drying alcohols and they have dry skin, elevate the risk to High).
+Analyze these ingredients specifically for a ${genderStr} with ${skinType} skin, aged ${age}. Adjust the risk levels and hazard descriptions to match their profile (e.g., if a product has heavy oils and they have oily skin, flag it as a hazard; if it has drying alcohols and they have dry skin, elevate the risk to High).
 
 Return STRICTLY a raw JSON object with this schema:
 
