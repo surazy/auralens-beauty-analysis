@@ -10,13 +10,14 @@ interface Props {
   onClose: () => void;
   onCapture: (base64: string, mode: "bottle" | "skin") => Promise<void>;
   locale: Locale;
+  initialMode?: "bottle" | "skin";
 }
 
-export function CameraMatrix({ onClose, onCapture, locale }: Props) {
+export function CameraMatrix({ onClose, onCapture, locale, initialMode = "bottle" }: Props) {
   const webcamRef = useRef<Webcam>(null);
   const [processing, setProcessing] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [cameraMode, setCameraMode] = useState<"bottle" | "skin">("bottle");
+  const [cameraMode, setCameraMode] = useState<"bottle" | "skin">(initialMode);
 
   const handleCapture = useCallback(async () => {
     const video = webcamRef.current?.video as HTMLVideoElement | null;

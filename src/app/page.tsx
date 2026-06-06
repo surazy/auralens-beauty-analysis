@@ -124,6 +124,7 @@ export default function HomePage() {
 
   const [locale, setLocale] = useState<Locale>("en");
   const [isSandbox, setIsSandbox] = useState(false);
+  const [cameraInitialMode, setCameraInitialMode] = useState<"bottle" | "skin">("bottle");
 
   useEffect(() => {
     // Sync locale state from localStorage
@@ -294,7 +295,8 @@ export default function HomePage() {
             locale={locale}
             onToggleLocale={handleToggleLocale}
             onSwitchTab={(tab) => setActiveTab(tab)}
-            onLaunchCamera={() => {
+            onLaunchCamera={(mode) => {
+              setCameraInitialMode(mode || "skin");
               setActiveTab("hub");
               setView("camera");
             }}
@@ -305,7 +307,10 @@ export default function HomePage() {
           <VanityHub
             skinType={profile?.skinType ?? "Sensitive"}
             age={profile?.age ?? "30-39"}
-            onLaunchCamera={() => setView("camera")}
+            onLaunchCamera={() => {
+              setCameraInitialMode("bottle");
+              setView("camera");
+            }}
             locale={locale}
             onToggleLocale={handleToggleLocale}
           />
@@ -367,6 +372,7 @@ export default function HomePage() {
             onClose={() => setView("hub")}
             onCapture={handleCapture}
             locale={locale}
+            initialMode={cameraInitialMode}
           />
         )}
       </AnimatePresence>

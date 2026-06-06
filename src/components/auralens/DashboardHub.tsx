@@ -25,7 +25,7 @@ interface DashboardHubProps {
   locale: Locale;
   onToggleLocale: () => void;
   onSwitchTab: (tab: "dashboard" | "hub" | "history") => void;
-  onLaunchCamera?: () => void;
+  onLaunchCamera?: (mode?: "bottle" | "skin") => void;
 }
 
 interface SkinScanPayload {
@@ -42,7 +42,7 @@ const localTranslations = {
     managementTab: "Vanity Management",
     welcomeTitle: "Welcome to Bloomy",
     onboardingText: "Scan your face or a product bottle to unlock your personalized vanity workspace.",
-    scanFaceBtn: "Scan Face (Simulate)",
+    scanFaceBtn: "Scan Face",
     scanProductBtn: "Scan Product Bottle",
     activeState: "Active State",
     skinProfile: "Skin Profile",
@@ -80,7 +80,7 @@ const localTranslations = {
     managementTab: "የውበት መደርደሪያ አስተዳደር",
     welcomeTitle: "እንኳን ወደ Bloomy በደህና መጡ",
     onboardingText: "ግላዊነት የተላበሰውን የውበት መደርደሪያዎን ለመክፈት ፊትዎን ወይም የምርት ጠርሙስዎን ይፈትሹ።",
-    scanFaceBtn: "ፊት መርምር (አስመስል)",
+    scanFaceBtn: "ፊት መርምር",
     scanProductBtn: "የምርት ጠርሙስ መርምር",
     activeState: "ንቁ ሁኔታ",
     skinProfile: "የቆዳ መገለጫ",
@@ -366,7 +366,7 @@ export function DashboardHub({ locale, onToggleLocale, onSwitchTab, onLaunchCame
             
             <div className="flex flex-col gap-3">
               <button
-                onClick={handleSimulateSkinScan}
+                onClick={() => onLaunchCamera?.("skin")}
                 className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#22C55E] to-[#16A34A] text-xs font-bold uppercase tracking-widest text-white shadow-md hover:brightness-105 active:scale-[0.98] transition-all"
               >
                 {t.scanFaceBtn}
@@ -401,7 +401,7 @@ export function DashboardHub({ locale, onToggleLocale, onSwitchTab, onLaunchCame
                 </button>
               ) : (
                 <button
-                  onClick={handleSimulateSkinScan}
+                  onClick={() => onLaunchCamera?.("skin")}
                   className="text-[9px] uppercase tracking-wider text-emerald-600 hover:underline font-semibold"
                 >
                   {locale === "en" ? "Scan Face" : "ፊት መርምር"}
