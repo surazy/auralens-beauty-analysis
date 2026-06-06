@@ -3,9 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
+import { Sliders, Camera, History } from "lucide-react";
 
 import { VanityHub } from "@/components/auralens/VanityHub";
 import { CameraMatrix } from "@/components/auralens/CameraMatrix";
+import { DashboardHub } from "@/components/auralens/DashboardHub";
+import HistoryPage from "@/app/history/page";
 import {
   SynergySheet,
   type AnalysisResult,
@@ -14,6 +17,7 @@ import { db } from "@/lib/db";
 import { type Locale } from "@/lib/translations";
 
 type View = "hub" | "camera";
+type Tab = "dashboard" | "hub" | "history";
 
 const mockEnglishPayload: AnalysisResult = {
   brand: "Head & Shoulders",
@@ -110,6 +114,7 @@ const mockAmharicPayload: AnalysisResult = {
 export default function HomePage() {
   const router = useRouter();
   const [view, setView] = useState<View>("hub");
+  const [activeTab, setActiveTab] = useState<Tab>("hub");
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -158,9 +163,73 @@ export default function HomePage() {
     localStorage.setItem("bloomy:locale", next);
   };
 
-  const handleCapture = async (base64: string) => {
+  const handleCapture = async (base64: string, mode: "bottle" | "skin") => {
     setError(null);
 
+    if (mode === "skin") {
+      if (isSandbox) {
+        // 700 milliseconds delay for sandbox mode
+        await new Promise((resolve) => setTimeout(resolve, 700));
+
+        const skinTypeVal = locale === "am" ? "ቅባታማ ቆዳ" : "Oily Skin";
+        const focusVal = locale === "am"
+          ? "በግንባር እና በአፍንጫ አካባቢ መጠነኛ ቅባት ታይቷል።"
+          : "Moderate oiliness observed around the T-zone and forehead.";
+
+        const skinScanResult = {
+          skinType: skinTypeVal,
+          hydra: 62,
+          glow: 71,
+          createdAt: Date.now(),
+          primaryFocus: focusVal
+        };
+
+        localStorage.setItem("bloomy:skin_scan", JSON.stringify(skinScanResult));
+        setActiveTab("dashboard");
+        setView("hub");
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/analyze-skin", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            imageBase64: base64,
+            locale: locale,
+          }),
+        });
+
+        const res = await response.json();
+
+        if (res.ok && res.result) {
+          const skinScanResult = {
+            skinType: res.result.skinType,
+            hydra: res.result.hydraScore ?? 62,
+            glow: res.result.glowScore ?? 71,
+            createdAt: Date.now(),
+            primaryFocus: res.result.primaryFocus || ""
+          };
+
+          localStorage.setItem("bloomy:skin_scan", JSON.stringify(skinScanResult));
+          setActiveTab("dashboard");
+          setView("hub");
+        } else {
+          setError(res.error || "Skin analysis failed");
+          setView("hub");
+          setSheetOpen(true);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Skin analysis failed");
+        setView("hub");
+        setSheetOpen(true);
+      }
+      return;
+    }
+
+    // Default "bottle" mode
     if (isSandbox) {
       setResult(null);
       setError(null);
@@ -221,15 +290,95 @@ export default function HomePage() {
     );
   }
 
+  const getTabClass = (tab: Tab) => {
+    const isActive = activeTab === tab;
+    if (activeTab === "dashboard") {
+      return isActive
+        ? "text-emerald-600 font-bold scale-105"
+        : "text-emerald-950/35 hover:text-emerald-700";
+    } else {
+      return isActive
+        ? "text-gold font-bold scale-105"
+        : "text-muted-foreground hover:text-gold";
+    }
+  };
+
   return (
-    <div className="relative mx-auto h-screen w-full max-w-md overflow-hidden bg-background">
-      <VanityHub
-        skinType={profile?.skinType ?? "Sensitive"}
-        age={profile?.age ?? "30-39"}
-        onLaunchCamera={() => setView("camera")}
-        locale={locale}
-        onToggleLocale={handleToggleLocale}
-      />
+    <div className="relative mx-auto h-screen w-full max-w-md overflow-hidden bg-background flex flex-col justify-between">
+      
+      {/* Active Tab View */}
+      <div className="h-[calc(100%-4rem)] w-full overflow-hidden relative">
+        {activeTab === "dashboard" && (
+          <DashboardHub
+            locale={locale}
+            onToggleLocale={handleToggleLocale}
+            onSwitchTab={(tab) => setActiveTab(tab)}
+            onLaunchCamera={() => {
+              setActiveTab("hub");
+              setView("camera");
+            }}
+          />
+        )}
+
+        {activeTab === "hub" && (
+          <VanityHub
+            skinType={profile?.skinType ?? "Sensitive"}
+            age={profile?.age ?? "30-39"}
+            onLaunchCamera={() => setView("camera")}
+            locale={locale}
+            onToggleLocale={handleToggleLocale}
+          />
+        )}
+
+        {activeTab === "history" && (
+          <HistoryPage
+            isTab={true}
+            onBack={() => setActiveTab("hub")}
+            localeProp={locale}
+            onToggleLocaleProp={handleToggleLocale}
+          />
+        )}
+      </div>
+
+      {/* Bottom Navigation Bar */}
+      <div className={`h-16 w-full flex items-center justify-around z-25 border-t transition-all duration-300 ${
+        activeTab === "dashboard"
+          ? "bg-white border-[#BBF7D0]"
+          : "bg-card border-border"
+      }`}>
+        {/* Left Tab: Dashboard */}
+        <button
+          onClick={() => setActiveTab("dashboard")}
+          className={`flex flex-col items-center justify-center w-20 py-1 transition-all select-none cursor-pointer ${getTabClass("dashboard")}`}
+        >
+          <Sliders className="h-5 w-5" />
+          <span className="text-[10px] mt-0.5 tracking-wider">
+            {locale === "en" ? "Manage" : "ማስተዳደሪያ"}
+          </span>
+        </button>
+
+        {/* Middle Tab: Home/Scan */}
+        <button
+          onClick={() => setActiveTab("hub")}
+          className={`flex flex-col items-center justify-center w-20 py-1 transition-all select-none cursor-pointer ${getTabClass("hub")}`}
+        >
+          <Camera className="h-5 w-5" />
+          <span className="text-[10px] mt-0.5 tracking-wider">
+            {locale === "en" ? "AuraLens" : "መነሻ"}
+          </span>
+        </button>
+
+        {/* Right Tab: History */}
+        <button
+          onClick={() => setActiveTab("history")}
+          className={`flex flex-col items-center justify-center w-20 py-1 transition-all select-none cursor-pointer ${getTabClass("history")}`}
+        >
+          <History className="h-5 w-5" />
+          <span className="text-[10px] mt-0.5 tracking-wider">
+            {locale === "en" ? "Archive" : "ማህደር"}
+          </span>
+        </button>
+      </div>
 
       <AnimatePresence>
         {view === "camera" && (

@@ -84,7 +84,7 @@ export const translations = {
     acneProneSkinDesc: "Frequent blemishes, breakouts, or clogged pores.",
     // History
     archive: "Archive",
-    scanLog: "scan Log",
+    scanLog: "Scan Log",
     clearArchiveConfirm: "Clear all archived scans?",
     loading: "Loading…",
     noScansYet: "No scans yet",

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Camera, Sparkles, Clock, Droplet, History, CheckCircle2, Bookmark, Flame, Zap } from "lucide-react";
+import { Camera, Sparkles, Clock, Droplet, CheckCircle2, Bookmark, Flame, Zap } from "lucide-react";
 import { db, type ScanRecord } from "@/lib/db";
 import { translations, type Locale } from "@/lib/translations";
 
@@ -137,13 +137,6 @@ export function VanityHub({ skinType, age, onLaunchCamera, locale, onToggleLocal
           >
             {locale === "en" ? "አማርኛ" : "English"}
           </button>
-          <Link
-            href="/history"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
-            aria-label="Open archive"
-          >
-            <History className="h-4 w-4 text-gold" />
-          </Link>
         </div>
       </header>
 

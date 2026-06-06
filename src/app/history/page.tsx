@@ -28,7 +28,14 @@ function fmt(ts: number, locale: Locale) {
   });
 }
 
-export default function HistoryPage() {
+interface HistoryPageProps {
+  onBack?: () => void;
+  isTab?: boolean;
+  localeProp?: Locale;
+  onToggleLocaleProp?: () => void;
+}
+
+export default function HistoryPage({ onBack, isTab = false, localeProp, onToggleLocaleProp }: HistoryPageProps = {}) {
   const [items, setItems] = useState<ScanRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ScanRecord | null>(null);
@@ -41,16 +48,24 @@ export default function HistoryPage() {
 
   useEffect(() => {
     refresh();
-    const savedLocale = localStorage.getItem("bloomy:locale") as Locale;
-    if (savedLocale === "en" || savedLocale === "am") {
-      setLocale(savedLocale);
+    if (localeProp) {
+      setLocale(localeProp);
+    } else {
+      const savedLocale = localStorage.getItem("bloomy:locale") as Locale;
+      if (savedLocale === "en" || savedLocale === "am") {
+        setLocale(savedLocale);
+      }
     }
-  }, []);
+  }, [localeProp]);
 
   const handleToggleLocale = () => {
-    const next = locale === "en" ? "am" : "en";
-    setLocale(next);
-    localStorage.setItem("bloomy:locale", next);
+    if (onToggleLocaleProp) {
+      onToggleLocaleProp();
+    } else {
+      const next = locale === "en" ? "am" : "en";
+      setLocale(next);
+      localStorage.setItem("bloomy:locale", next);
+    }
   };
 
   async function handleDelete(id: string) {
@@ -68,17 +83,31 @@ export default function HistoryPage() {
   const t = translations[locale];
 
   return (
-    <div className="relative mx-auto h-screen w-full max-w-md overflow-hidden bg-background">
+    <div className="relative mx-auto h-full w-full max-w-md overflow-hidden bg-background">
       <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[oklch(0.82_0.13_85_/_18%)] blur-3xl" />
 
       <header className="relative z-10 flex items-center justify-between px-6 pt-12">
-        <Link
-          href="/"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
-          aria-label="Back"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
+        {isTab ? (
+          onBack ? (
+            <button
+              onClick={onBack}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
+              aria-label="Back"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          ) : (
+            <div className="w-10" />
+          )
+        ) : (
+          <Link
+            href="/"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card"
+            aria-label="Back"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        )}
         <div className="text-center">
           <p className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
             {t.archive}
