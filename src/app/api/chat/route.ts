@@ -41,8 +41,13 @@ Product Details:
 Your Task:
 - Respond to the user's questions or logs about their routine progress with this product.
 - Provide highly personalized, supportive, and scientifically accurate advice.
-- Keep your responses relatively concise (1-3 sentences, max 80 words) and direct.
-- If they report side effects like dryness, stinging, redness, or burning, give practical advice: explain if it's normal (e.g. purging from retinol/acids vs. barrier damage), advise on reducing frequency or pausing, and point to soothing solutions (like natural botanical oils, soothing honey balms, or organic recovery serums).
+- Keep your responses relatively concise (1-4 sentences, max 100 words) and direct.
+- If they attach an image of their skin symptom:
+  - Analyze the photo for visible signs of irritation, redness, dry patches, flakiness, breakouts, or allergic reactions.
+  - Explain whether this could be a temporary reaction (purging) to the product ingredients, or a sign of contact dermatitis/barrier damage.
+  - Suggest simple, natural soothing alternatives (like flaxseed/Telba gel, black seed oil, honey balm, or moringa leaf extract).
+  - Explicitly advise if they should pause using the current product.
+- If they report symptoms in text without an image, give practical advice: explain if it's normal (e.g. purging from retinol/acids vs. barrier damage), advise on reducing frequency or pausing, and point to soothing solutions.
 - Do not use markdown styling like headers or bullet points; use clean, elegant paragraph prose.`;
 
     if (locale === "am") {
@@ -61,13 +66,28 @@ Your Task:
         model: "meta-llama/llama-4-scout-17b-16e-instruct",
         messages: [
           { role: "system", content: systemPrompt },
-          ...messages.map((m: any) => ({
-            role: m.sender === "user" ? "user" : "assistant",
-            content: m.text,
-          })),
+          ...messages.map((m: any) => {
+            const role = m.sender === "user" ? "user" : "assistant";
+            if (m.image) {
+              const imageUrl = m.image.startsWith("data:")
+                ? m.image
+                : `data:image/jpeg;base64,${m.image}`;
+              return {
+                role,
+                content: [
+                  { type: "text", text: m.text || "Analyze this skin symptom." },
+                  { type: "image_url", image_url: { url: imageUrl } }
+                ]
+              };
+            }
+            return {
+              role,
+              content: m.text
+            };
+          }),
         ],
         temperature: 0.5,
-        max_tokens: 250,
+        max_tokens: 350,
       }),
     });
 

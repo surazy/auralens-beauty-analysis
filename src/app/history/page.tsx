@@ -15,6 +15,7 @@ import {
   HeartHandshake,
   ExternalLink,
   Clock,
+  Camera,
 } from "lucide-react";
 import { db, type ScanRecord } from "@/lib/db";
 import { translations, type Locale } from "@/lib/translations";
@@ -226,24 +227,43 @@ function DetailSheet({
   locale: Locale;
   onClose: () => void;
 }) {
-  const [chatLog, setChatLog] = useState<Array<{ sender: "user" | "ai"; text: string; date: string }>>(
+  const [chatLog, setChatLog] = useState<Array<{ sender: "user" | "ai"; text: string; date: string; image?: string }>>(
     record.progressChatLog || []
   );
   const [inputText, setInputText] = useState("");
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [expandedBenefitIdx, setExpandedBenefitIdx] = useState<number | null>(null);
   const [expandedHazardIdx, setExpandedHazardIdx] = useState<number | null>(null);
 
   const t = translations[locale];
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAttachedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim()) return;
+    if (!inputText.trim() && !attachedImage) return;
 
     const userText = inputText;
+    const userImg = attachedImage;
     setInputText("");
+    setAttachedImage(null);
 
-    const newUserMessage = { sender: "user" as const, text: userText, date: locale === "en" ? "Today" : "ዛሬ" };
+    const newUserMessage = {
+      sender: "user" as const,
+      text: userText,
+      date: locale === "en" ? "Today" : "ዛሬ",
+      ...(userImg ? { image: userImg } : {}),
+    };
     const updatedLog = [...chatLog, newUserMessage];
     setChatLog(updatedLog);
     setIsSending(true);
@@ -575,6 +595,15 @@ function DetailSheet({
                           : "bg-white text-neutral-800 border border-neutral-200/60 shadow-sm"
                         }`}
                     >
+                      {msg.image && (
+                        <div className="mb-2 max-w-full overflow-hidden rounded-lg border border-neutral-200/40">
+                          <img
+                            src={msg.image}
+                            alt="Symptom photo"
+                            className="max-h-40 w-auto rounded-lg object-cover"
+                          />
+                        </div>
+                      )}
                       {msg.text}
                     </div>
                     <span className="text-[8px] text-neutral-400 mt-1 px-1">
@@ -591,8 +620,41 @@ function DetailSheet({
               )}
             </div>
 
+            {/* Attached Image Preview */}
+            {attachedImage && (
+              <div className="relative inline-block ml-1 self-start bg-neutral-100 rounded-xl p-1 border border-border animate-fadeIn">
+                <img
+                  src={attachedImage}
+                  alt="Attachment preview"
+                  className="h-14 w-14 rounded-lg object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => setAttachedImage(null)}
+                  className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-500 text-white text-[9px] font-bold shadow-md hover:bg-rose-600 cursor-pointer"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
             {/* Send Input Form */}
             <form onSubmit={handleSendMessage} className="flex gap-2 mt-2">
+              <input
+                type="file"
+                id="chat-image-attach"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <label
+                htmlFor="chat-image-attach"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-white text-neutral-500 hover:text-gold hover:border-gold/50 active:scale-95 transition-all cursor-pointer"
+                title={locale === "en" ? "Attach symptom image" : "ምልክት ፎቶ አያይዝ"}
+              >
+                <Camera className="h-4 w-4" />
+              </label>
+
               <input
                 type="text"
                 value={inputText}
@@ -602,7 +664,7 @@ function DetailSheet({
               />
               <button
                 type="submit"
-                disabled={!inputText.trim()}
+                disabled={!inputText.trim() && !attachedImage}
                 className="gold-gradient text-neutral-950 font-medium px-3 rounded-xl hover:opacity-95 transition-opacity disabled:opacity-40"
               >
                 <Send className="h-3.5 w-3.5 text-neutral-950" />
